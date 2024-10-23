@@ -26,6 +26,6 @@
   "session_cleaner": 600,
   "db_file": "server.db",
   "log_file": "/tmp/server.log",
-  "log_to_file": true
+  "log_to_file": false
  }
 }
