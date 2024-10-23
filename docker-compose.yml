@@ -1,11 +1,23 @@
 
 services:
-  server:
-    network_mode: "host"
+  mariadb:
+    image: mariadb:10.5
+    container_name: mariadb
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+    volumes:
+      - ./mariadb:/var/lib/mysql
     depends_on: {}
     deploy:
       restart_policy:
         condition: any
+    network_mode: "host"
+    healthcheck:
+      test: "mysqladmin  --protocol=tcp --host=localhost --user=root --password=password ping"
+
+  server:
+    network_mode: "host"
     build: ./yellow-server/
     volumes:
       - ./yellow-server:/app/app
@@ -13,3 +25,7 @@ services:
       - ./yellow-server-settings.json:/app/yellow-server-settings.json
     environment:
       - VITE_YELLOW_SETTINGS_PATH=/app/yellow-server-settings.json
+    depends_on: {mariadb: {condition: service_healthy}}
+    deploy:
+      restart_policy:
+        condition: any
