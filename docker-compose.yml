@@ -10,4 +10,6 @@ services:
     volumes:
       - ./yellow-server:/app/app
       - ./yellow-server-common:/app/lib/yellow-server-common
-
+      - ./yellow-server-settings.json:/app/yellow-server-settings.json
+    environment:
+      - VITE_YELLOW_SETTINGS_PATH=/app/yellow-server-settings.json
