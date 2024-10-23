@@ -1,0 +1,31 @@
+{
+ "web": {
+  "standalone": true,
+  "https_disabled": true,
+  "http_port": 8086,
+  "https_port": 4433,
+  "certificates_path": "/etc/letsencrypt/live/{DOMAIN}/",
+  "socket_path": "server.sock",
+  "web_paths": [
+   {
+    "route": "/",
+    "path": "www"
+   }
+  ]
+ },
+ "database": {
+  "host": "127.0.0.1",
+  "port": 3306,
+  "user": "username",
+  "password": "password",
+  "name": "yellow"
+ },
+ "other": {
+  "session_admin": 600,
+  "session_user": 2592000,
+  "session_cleaner": 600,
+  "db_file": "server.db",
+  "log_file": "/tmp/server.log",
+  "log_to_file": true
+ }
+}
