@@ -1,0 +1,10 @@
+
+services:
+  server:
+    network_mode: "host"
+    depends_on: {}
+    deploy:
+      restart_policy:
+        condition: any
+    build: ./yellow-server/
+
