@@ -15,6 +15,10 @@ services:
     network_mode: "host"
     healthcheck:
       test: "mysqladmin  --protocol=tcp --host=localhost --user=root --password=password ping"
+      interval: 1s
+      timeout: 1m
+      retries: 200
+
 
   server:
     network_mode: "host"
