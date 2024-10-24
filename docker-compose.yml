@@ -1,3 +1,4 @@
+version: "3.12"
 
 services:
   mariadb:
@@ -15,9 +16,10 @@ services:
     network_mode: "host"
     healthcheck:
       test: "mysqladmin  --protocol=tcp --host=localhost --user=root --password=password ping"
-      interval: 1s
-      timeout: 1m
-      retries: 200
+      #start_interval: 1s #Docker Engine version 25.0 or later
+      interval: 5s
+      timeout: 20s
+      retries: 30
 
 
   server:
@@ -25,7 +27,7 @@ services:
     build: ./yellow-server/
     volumes:
       - ./yellow-server:/app/app
-      - ./yellow-server-common:/app/lib/yellow-server-common
+      - ./yellow-server-common:/app/yellow-server-common
       - ./yellow-server-settings.json:/app/settings.json
     environment:
       - VITE_YELLOW_SETTINGS_PATH=/app/settings.json
@@ -36,10 +38,11 @@ services:
       restart_policy:
         condition: any
     healthcheck:
-      test: "curl -v --fail http://localhost:8086/"
-      interval: 1s
-      timeout: 1m
-      retries: 200
+      test: "curl -v --fail http://localhost:8086/health"
+      #start_interval: 1s #Docker Engine version 25.0 or later
+      interval: 5s
+      timeout: 20s
+      retries: 30
 
 
   messages:
@@ -47,7 +50,7 @@ services:
     build: ./yellow-server-module-messages/
     volumes:
       - ./yellow-server-module-messages:/app/app
-      - ./yellow-server-common:/app/lib/yellow-server-common
+      - ./yellow-server-common:/app/yellow-server-common
       - ./yellow-server-module-messages-settings.json:/app/settings.json
     environment:
       - VITE_YELLOW_SETTINGS_PATH=/app/settings.json
@@ -56,10 +59,11 @@ services:
       restart_policy:
         condition: any
     healthcheck:
-      test: "curl -v --fail http://localhost:25001/"
-      interval: 1s
-      timeout: 1m
-      retries: 200
+      test: "curl -v --fail http://localhost:25001/health"
+      #start_interval: 1s #Docker Engine version 25.0 or later
+      interval: 5s
+      timeout: 20s
+      retries: 30
 
 
   admin:
@@ -67,11 +71,17 @@ services:
     build: ./yellow-admin/
     volumes:
       - ./yellow-admin:/app/app
-      - ./yellow-server-common:/app/lib/yellow-server-common
+      - ./yellow-server-common:/app/yellow-server-common
     depends_on: {server: {condition: service_healthy}}
     deploy:
       restart_policy:
         condition: any
+    healthcheck:
+      test: "curl -v --fail http://localhost:4000/#health"
+      #start_interval: 1s #Docker Engine version 25.0 or later
+      interval: 5s
+      timeout: 20s
+      retries: 30
 
 
   client:
@@ -83,5 +93,11 @@ services:
     deploy:
       restart_policy:
         condition: any
+    healthcheck:
+      test: "curl -v --fail http://localhost:3000/#health"
+      #start_interval: 1s #Docker Engine version 25.0 or later
+      interval: 5s
+      timeout: 20s
+      retries: 30
 
 
