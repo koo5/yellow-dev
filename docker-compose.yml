@@ -17,7 +17,7 @@ services:
     healthcheck:
       test: "mysqladmin  --protocol=tcp --host=localhost --user=root --password=password ping"
       #start_interval: 1s #Docker Engine version 25.0 or later
-      interval: 5s
+      interval: 1s
       timeout: 20s
       retries: 30
 
@@ -40,7 +40,7 @@ services:
     healthcheck:
       test: "curl -v --fail http://localhost:8086/health"
       #start_interval: 1s #Docker Engine version 25.0 or later
-      interval: 5s
+      interval: 1s
       timeout: 20s
       retries: 30
 
@@ -61,7 +61,7 @@ services:
     healthcheck:
       test: "curl -v --fail http://localhost:25001/health"
       #start_interval: 1s #Docker Engine version 25.0 or later
-      interval: 5s
+      interval: 1s
       timeout: 20s
       retries: 30
 
@@ -79,7 +79,7 @@ services:
     healthcheck:
       test: "curl -v --fail http://localhost:4000/#health"
       #start_interval: 1s #Docker Engine version 25.0 or later
-      interval: 5s
+      interval: 1s
       timeout: 20s
       retries: 30
 
@@ -96,7 +96,7 @@ services:
     healthcheck:
       test: "curl -v --fail http://localhost:3000/#health"
       #start_interval: 1s #Docker Engine version 25.0 or later
-      interval: 5s
+      interval: 1s
       timeout: 20s
       retries: 30
 
