@@ -28,3 +28,5 @@ gcam $m; gp
 cd ..
 
 gcam $m; gp
+
+git status
