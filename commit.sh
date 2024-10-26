@@ -5,28 +5,33 @@ set m $argv[1]
 echo $m
 
 cd yellow-server-common/
+pwd; git status;
 gcam $m; gp
 cd ..
 
 cd yellow-server/src
-nvm use; bun remove yellow-server-common;  bun add https://github.com/libersoft-org/yellow-server-common --latest; bun link yellow-server-common
+pwd; git status;
+../../link.sh
 gcam $m; gp
 cd ../..
 
 cd yellow-server-module-messages/src
-nvm use; bun remove yellow-server-common;  bun add https://github.com/libersoft-org/yellow-server-common --latest; bun link yellow-server-common
+pwd; git status;
+../../link.sh
 gcam $m; gp
 cd ../..
 
 cd yellow-admin/
-nvm use; bun remove yellow-server-common;  bun add https://github.com/libersoft-org/yellow-server-common --latest; bun link yellow-server-common
+pwd; git status;
+../link.sh
 gcam $m; gp
 cd ..
  
 cd yellow-client/
+pwd; git status;
 gcam $m; gp
 cd ..
 
+pwd; git status;
 gcam $m; gp
-
 git status

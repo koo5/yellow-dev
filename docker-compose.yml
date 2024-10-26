@@ -8,7 +8,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: password
     volumes:
-      - ./mariadb:/var/lib/mysql
+      - mariadb:/var/lib/mysql
     depends_on: {}
     deploy:
       restart_policy:
@@ -101,3 +101,5 @@ services:
       retries: 30
 
 
+volumes:
+  mariadb:
