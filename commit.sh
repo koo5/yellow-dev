@@ -39,3 +39,5 @@ cd ..
 pwd; git status;
 gcam $m; gp; e
 git status
+
+mpv /usr/share/sounds/Oxygen-Im-New-Mail.ogg > /dev/null
