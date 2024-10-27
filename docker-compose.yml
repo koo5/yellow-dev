@@ -15,7 +15,7 @@ services:
         condition: any
     network_mode: "host"
     healthcheck:
-      test: "mysqladmin  --protocol=tcp --host=localhost --user=root --password=password ping"
+      test: "echo exit | mysql  --protocol=tcp --host=localhost --user=root --password=password yellow"
       #start_interval: 1s #Docker Engine version 25.0 or later
       interval: 1s
       timeout: 20s
