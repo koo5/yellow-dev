@@ -16,9 +16,6 @@ docker-compose down; docker-compose up --build --remove-orphans
  ./dev_db_init.py (hostname) |  mariadb --protocol=tcp --host=localhost --user=root --password=password --force
 ```
 4)
-```
-docker-compose down; docker-compose up --build --remove-orphans
-```
 (full stack should be up & healthy now)
 
 ## development
