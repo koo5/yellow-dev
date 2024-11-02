@@ -8,6 +8,10 @@ echo $m
 
 git status; e
 
+echo
+echo ========
+echo
+
 cd yellow-server-common/
 pwd; git status;
 gcam $m; gp; e
