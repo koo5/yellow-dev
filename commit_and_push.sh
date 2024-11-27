@@ -22,7 +22,7 @@ echo
 
 cd yellow-server/src
 pwd; git status;
-../../link.sh; e
+../../dev_common_link.sh; e
 gcam $m; gp; e
 cd ../..
 echo
@@ -31,7 +31,7 @@ echo
 
 cd yellow-server-module-messages/src
 pwd; git status;
-../../link.sh; e
+../../dev_common_link.sh; e
 gcam $m; gp; e
 cd ../..
 echo
@@ -40,7 +40,7 @@ echo
 
 cd yellow-admin/
 pwd; git status;
-../link.sh; e
+../dev_common_link.sh; e
 gcam $m; gp; e
 cd ..
 echo
