@@ -1,10 +1,15 @@
 {
  "web": {
   "standalone": true,
-  "https_disabled": true,
-  "http_port": 8086,
-  "https_port": 4433,
-  "certificates_path": "/etc/letsencrypt/live/{DOMAIN}/",
+  "http_port": 80,
+  "https_port": 443,
+  "certificates": [
+   {
+    "domain": "{DOMAIN}",
+    "private": "/etc/letsencrypt/live/{DOMAIN}/privkey.pem",
+    "public": "/etc/letsencrypt/live/{DOMAIN}/cert.pem"
+   }
+  ],
   "socket_path": "server.sock",
   "web_paths": [
    {
@@ -21,33 +26,19 @@
   "name": "yellow"
  },
  "log": {
-  "screen": {
+  "level": "trace",
+  "stdout": {
    "enabled": true,
-   "levels": {
-    "debug": true,
-    "info": true,
-    "warning": true,
-    "error": true
-   }
+   "level": "info"
+  },
+  "database": {
+   "enabled": true,
+   "level": "debug"
   },
   "file": {
    "enabled": true,
    "name": "server.log",
-   "levels": {
-    "debug": true,
-    "info": true,
-    "warning": true,
-    "error": true
-   }
-  },
-  "database": {
-   "enabled": true,
-   "levels": {
-    "debug": true,
-    "info": true,
-    "warning": true,
-    "error": true
-   }
+   "level": "trace"
   }
  },
  "session": {
