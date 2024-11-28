@@ -1,8 +1,11 @@
 {
  "web": {
   "standalone": true,
-  "http_port": 80,
-  "https_port": 443,
+
+  "https_disabled": true,
+  "http_port": 8086,
+  "https_port": 4433,
+
   "certificates": [
    {
     "domain": "{DOMAIN}",
@@ -26,10 +29,12 @@
   "name": "yellow"
  },
  "log": {
+
   "level": "trace",
+
   "stdout": {
    "enabled": true,
-   "level": "info"
+   "level": "trace"
   },
   "database": {
    "enabled": true,
@@ -37,7 +42,7 @@
   },
   "file": {
    "enabled": true,
-   "name": "server.log",
+   "name": "/tmp/server.log",
    "level": "trace"
   }
  },
