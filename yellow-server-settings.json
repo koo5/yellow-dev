@@ -20,12 +20,39 @@
   "password": "password",
   "name": "yellow"
  },
- "other": {
-  "session_admin": 600,
-  "session_user": 2592000,
-  "session_cleaner": 600,
-  "db_file": "server.db",
-  "log_file": "/tmp/server.log",
-  "log_to_file": false
+ "log": {
+  "screen": {
+   "enabled": true,
+   "levels": {
+    "debug": true,
+    "info": true,
+    "warning": true,
+    "error": true
+   }
+  },
+  "file": {
+   "enabled": true,
+   "name": "server.log",
+   "levels": {
+    "debug": true,
+    "info": true,
+    "warning": true,
+    "error": true
+   }
+  },
+  "database": {
+   "enabled": true,
+   "levels": {
+    "debug": true,
+    "info": true,
+    "warning": true,
+    "error": true
+   }
+  }
+ },
+ "session": {
+  "admin": 600,
+  "user": 2592000,
+  "cleaner": 600
  }
 }

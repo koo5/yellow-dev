@@ -1,0 +1,11 @@
+{
+        "host"     : "localhost",
+        "user"     : "username",
+        "password" : "password",
+        "database" : "yellow",
+        "table"    : "logs4",
+        "columns"  : {
+            "log"  : "*",
+			"ts"	: "time"
+        }
+    }
