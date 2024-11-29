@@ -1,0 +1,16 @@
+{
+  "name": "yellow-dev",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "pino-pretty-min": "^0.3.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "pino-filter": "^2.0.0",
+    "pino-pretty": "^13.0.0"
+  }
+}

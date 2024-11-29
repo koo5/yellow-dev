@@ -1,0 +1,7 @@
+{
+  "levels": {
+    "foo:bar": "debug",
+    "webserver": "warning",
+    "*": "trace"
+  }
+}
