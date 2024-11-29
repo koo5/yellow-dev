@@ -28,24 +28,41 @@
   "password": "password",
   "name": "yellow"
  },
- "log": {
 
+  "log": {
   "level": "trace",
 
   "stdout": {
    "enabled": true,
-   "level": "trace"
+   "levels": [
+    {
+     "*": "info"
+    }
+   ]
+  },
+  "file": {
+   "enabled": true,
+   "name": "/var/log/yellow/server.log",
+   "levels": [
+    {
+     "*": "info"
+    }
+   ]
   },
   "database": {
    "enabled": true,
    "level": "debug"
   },
-  "file": {
+  "json": {
    "enabled": true,
-   "name": "/var/log/yellow/server.log",
+   "name": "/var/log/yellow/json.log",
    "level": "trace"
+  },
+  "elasticsearch": {
+   "enabled": true
   }
  },
+
  "session": {
   "admin": 600,
   "user": 2592000,
