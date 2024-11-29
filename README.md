@@ -20,7 +20,11 @@ docker-compose down; docker-compose up --build --remove-orphans
 
 ## development
 
+* https://bun.sh/docs/runtime/debugger
+
 ```
-https://bun.sh/docs/runtime/debugger
+tail -f /var/snap/docker/common/var-lib-docker/volumes/yellow-dev_server_logs/_data/server.log | node node_modules/pino-pretty-min/bin.js
+```
+
 
 

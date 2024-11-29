@@ -26,6 +26,7 @@ services:
     network_mode: "host"
     build: ./yellow-server/
     volumes:
+      - server_logs:/var/log/yellow
       - ./yellow-server:/app/app
       - ./yellow-server-common:/app/yellow-server-common
       - ./yellow-server-settings.json:/app/settings.json
@@ -103,3 +104,4 @@ services:
 
 volumes:
   mariadb:
+  server_logs:
