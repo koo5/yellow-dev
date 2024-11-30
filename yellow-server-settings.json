@@ -36,7 +36,7 @@
    "enabled": true,
    "levels": [
     {
-     "*": "info"
+     "*": "debug"
     }
    ]
   },
