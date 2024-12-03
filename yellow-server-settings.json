@@ -35,18 +35,18 @@
   "stdout": {
    "enabled": true,
    "levels": [
-    {
-     "*": "debug"
-    }
+    {"modules": "info"},
+    {"auth": "info"},
+    {"webserver": "info"},
+    {"healthcheck": "warning"},
+    {"*": "debug"}
    ]
   },
   "file": {
    "enabled": true,
    "name": "/var/log/yellow/server.log",
    "levels": [
-    {
-     "*": "info"
-    }
+    {"*": "info"}
    ]
   },
   "database": {
