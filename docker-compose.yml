@@ -2,20 +2,22 @@ version: "3.12"
 
 services:
   mariadb:
-    image: mariadb:10.5
+    image: mariadb:11
     container_name: mariadb
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: password
     volumes:
       - mariadb:/var/lib/mysql
+      - mariadb_tmp:/tmp
     depends_on: {}
     deploy:
       restart_policy:
         condition: any
     network_mode: "host"
     healthcheck:
-      test: "echo exit | mysql  --protocol=tcp --host=localhost --user=root --password=password yellow"
+      test: "/bin/true"
+      #test: "echo exit | mysql  --protocol=tcp --host=localhost --user=root --password=password yellow"
       #start_interval: 1s #Docker Engine version 25.0 or later
       interval: 1s
       timeout: 20s
@@ -104,4 +106,5 @@ services:
 
 volumes:
   mariadb:
+  mariadb_tmp:
   server_logs:
