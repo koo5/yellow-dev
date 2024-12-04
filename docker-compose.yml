@@ -1,16 +1,27 @@
 version: "3.12"
 
 services:
+
+  mariadb-init:
+    image: alpine
+    container_name: mariadb-init
+    volumes:
+      - mariadb_tmp:/mariadb_tmp
+    command: ["sh", "-c", "mkdir -p /mariadb_tmp && chmod 1777 /mariadb_tmp"]
+    entrypoint: []
+
   mariadb:
-    image: mariadb:11
+    image: mariadb:10.5
     container_name: mariadb
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: password
+      TMPDIR: /mariadb_tmp
     volumes:
       - mariadb:/var/lib/mysql
-      - mariadb_tmp:/tmp
-    depends_on: {}
+      - mariadb_tmp:/mariadb_tmp
+    depends_on:
+      - mariadb-init
     deploy:
       restart_policy:
         condition: any
@@ -92,6 +103,8 @@ services:
     build: ./yellow-client/
     volumes:
       - ./yellow-client:/app/app
+    environment:
+      - VITE_YELLOW_HEARTBEAT_INTERVAL=1000000
     depends_on: {server: {condition: service_healthy}}
     deploy:
       restart_policy:
