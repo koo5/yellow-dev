@@ -3,6 +3,7 @@
   "module": "index.ts",
   "type": "module",
   "devDependencies": {
+    "@smui/menu": "^8.0.0-beta.0",
     "@types/bun": "latest",
     "git-format-staged": "^3.1.1",
     "husky": "^9.1.7",
