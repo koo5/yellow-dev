@@ -59,7 +59,7 @@
    "level": "trace"
   },
   "elasticsearch": {
-   "enabled": true
+   "enabled": false
   }
  },
 

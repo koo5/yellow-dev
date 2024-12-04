@@ -34,11 +34,18 @@ services:
       timeout: 20s
       retries: 30
 
+  server-init:
+    image: alpine
+    volumes:
+      - server_tmp:/tmp
+    command: ["sh", "-c", "mkdir -p /tmp && chmod 1777 /tmp"]
+    entrypoint: []
 
   server:
     network_mode: "host"
     build: ./yellow-server/
     volumes:
+      - server_tmp:/tmp
       - server_logs:/var/log/yellow
       - ./yellow-server:/app/app
       - ./yellow-server-common:/app/yellow-server-common
@@ -46,6 +53,7 @@ services:
     environment:
       - VITE_YELLOW_SETTINGS_PATH=/app/settings.json
     depends_on:
+      server-init: {condition: service_completed_successfully}
       mariadb: {condition: service_healthy}
       messages: {condition: service_healthy}
     deploy:
@@ -121,3 +129,6 @@ volumes:
   mariadb:
   mariadb_tmp:
   server_logs:
+  server_tmp:
+
+
