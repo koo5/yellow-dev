@@ -1,0 +1,4 @@
+#!/bin/bash
+
+git-format-staged --verbose -f 'prettier --config prettier-libersoft.json --plugin prettier-plugin-svelte --ignore-unknown --stdin-filepath "{}" ' "src/**/*"
+
