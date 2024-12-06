@@ -2,6 +2,8 @@
 
 function e; or status --is-interactive; or exit 1; end
 
+nvm use;
+
 set m $argv[1]
 
 echo $m
