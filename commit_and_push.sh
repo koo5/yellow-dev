@@ -40,7 +40,7 @@ echo
 
 cd yellow-admin/
 pwd; git status;
-../dev_common_link.sh; e
+#../dev_common_link.sh; e
 gcam $m; gp; e
 cd ..
 echo
