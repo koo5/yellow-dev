@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuickJS Sandbox Example</title>
+       <script src="https://unpkg.com/quickjs-emscripten/dist/quickjs-emscripten.js"></script>
+  <style>
+    #sandbox {
+      border: 1px solid #ccc;
+      padding: 10px;
+      min-height: 200px;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <h1>Main Page</h1>
+    <div id="sandbox"></div>
+  </div>
+
+  <script type="module">
+    import { createQuickJS } from './y.js';
+
+    (async () => {
+      // Initialize the QuickJS engine
+      const QuickJS = await createQuickJS();
+      const runtime = QuickJS.createRuntime();
+      const context = runtime.newContext();
+
+      // Reference to the allowed root element and allowed elements
+      const sandboxElement = document.getElementById('sandbox');
+      const allowedElements = new Set(['div', 'span', 'p', 'button', 'ul', 'li', 'a', 'img']);
+
+      // Create a restricted DOM API to inject into QuickJS
+      function createElement(tagName) {
+        if (!allowedElements.has(tagName.toLowerCase())) {
+          throw new Error(`Element <${tagName}> is not allowed.`);
+        }
+        return document.createElement(tagName);
+      }
+
+      function appendChild(parent, child) {
+        // Ensure the parent is either the sandboxElement or a child of it
+        if (parent === 'root') {
+          // A pseudo-handle: we can say 'root' means `sandboxElement`
+          sandboxElement.appendChild(child);
+        } else if (sandboxElement.contains(parent)) {
+          parent.appendChild(child);
+        } else {
+          throw new Error(`Parent element is not within sandbox.`);
+        }
+      }
+
+      // A minimal set of APIs we might expose
+      const domAPI = {
+        createElement: createElement,
+        appendChild: appendChild,
+        // ... you could add more restricted methods like setAttribute, addEventListener, etc.
+      };
+
+      // Convert JS functions/objects into QuickJS values
+      // We'll create a global "sandbox" object inside QuickJS that provides these methods
+      const sandboxObj = context.newObject();
+
+      // createElement binding
+      {
+        const fn = context.newFunction('createElement', (ctx, this_val, args) => {
+          const tagName = args[0].toString();
+          try {
+            const el = domAPI.createElement(tagName);
+            // We can't directly store DOM elements in QuickJS memory; instead we store references.
+            // One approach: store a weak map of IDs to DOM nodes.
+            // For simplicity, let's store them in a JS map outside and only pass a unique ID.
+            const id = `domnode-${Math.random().toString(36).slice(2)}`;
+            domNodeMap.set(id, el);
+            return context.newString(id);
+          } catch (e) {
+            return context.throwError(e.message);
+          }
+        });
+        sandboxObj.setProp(context, 'createElement', fn);
+        fn.dispose();
+      }
+
+      // appendChild binding
+      const domNodeMap = new Map(); // Map from ID strings to actual DOM nodes
+      {
+        const fn = context.newFunction('appendChild', (ctx, this_val, args) => {
+          const parentId = args[0].toString();
+          const childId = args[1].toString();
+          const parentEl = parentId === 'root' ? 'root' : domNodeMap.get(parentId);
+          const childEl = domNodeMap.get(childId);
+          if (!childEl) {
+            return context.throwError("Child element not found.");
+          }
+          try {
+            domAPI.appendChild(parentEl, childEl);
+            return context.undefined;
+          } catch (e) {
+            return context.throwError(e.message);
+          }
+        });
+        sandboxObj.setProp(context, 'appendChild', fn);
+        fn.dispose();
+      }
+
+      // If we want to simulate a window/document object:
+      const globalObj = context.global;
+      globalObj.setProp(context, 'sandbox', sandboxObj);
+
+      // Now we can attempt to load the compiled app code.
+      // Assume app.js is a self-contained bundle that, in a normal browser,
+      // would run and manipulate `document` or `window`.
+      // Here, we might need to patch global references or trick the code into using `sandbox` APIs.
+      //
+      // For demonstration, let's load `app.js` into a string:
+      const appCodeResponse = await fetch('./dist/app.js');
+      const appCode = await appCodeResponse.text();
+
+      // If the framework expects `document.createElement` etc., you might monkey-patch globals.
+      // We can override global objects inside QuickJS:
+      const injectCode = `
+        // Minimal monkey patch:
+        globalThis.document = {
+          createElement: sandbox.createElement,
+        };
+        globalThis.window = {
+          document: globalThis.document,
+          appendChild: (...args) => sandbox.appendChild(...args),
+          requestAnimationFrame: (cb) => setTimeout(cb, 0), // Mock for animations
+        };
+
+        // Create a 'root' container inside the sandbox as reference:
+        const rootId = "root"; // This represents the #sandbox in the real DOM
+
+        // We'll provide a global appendChild that uses sandbox API:
+        document.body = { appendChild: (child) => sandbox.appendChild(rootId, child) };
+      `;
+
+      const ret1 = context.evalCode(injectCode);
+      if (ret1.error) {
+        console.error("Error injecting code:", ret1.error);
+        ret1.error.dispose();
+      } else {
+        ret1.value.dispose();
+      }
+
+      // Evaluate the actual app code:
+      const ret2 = context.evalCode(appCode);
+      if (ret2.error) {
+        console.error("Error running app code:", ret2.error);
+        ret2.error.dispose();
+      } else {
+        ret2.value.dispose();
+      }
+
+      // The app (if it uses document.createElement and document.body.appendChild)
+      // should now operate within the restricted sandbox.
+      // Any elements it creates will be appended into #sandbox if it uses the patched APIs.
+
+      // Clean up on page unload or when you're done:
+      // runtime.dispose(); // when finished
+    })();
+  </script>
+
+</body>
+</html>
