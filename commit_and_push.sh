@@ -2,6 +2,8 @@
 
 function e; or status --is-interactive; or exit 1; end
 
+nvm use;
+
 set m $argv[1]
 
 echo $m
@@ -40,7 +42,7 @@ echo
 
 cd yellow-admin/
 pwd; git status;
-../dev_common_link.sh; e
+#../dev_common_link.sh; e
 gcam $m; gp; e
 cd ..
 echo
