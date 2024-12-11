@@ -29,7 +29,7 @@
   "name": "yellow"
  },
 
-  "log": {
+ "log": {
   "level": "trace",
 
   "stdout": {
