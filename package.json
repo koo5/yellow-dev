@@ -17,6 +17,7 @@
   "dependencies": {
     "pino-filter": "^2.0.0",
     "pino-pretty": "^13.0.0",
-    "quickjs-emscripten": "^0.31.0"
+    "quickjs-emscripten": "^0.31.0",
+    "vitest": "^2.1.8"
   }
 }
