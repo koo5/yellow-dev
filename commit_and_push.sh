@@ -15,6 +15,7 @@ echo ========
 echo
 
 cd yellow-server-common/
+bun bun.lockb > bun.lockb.txt
 pwd; git status;
 gcam $m; gp; e
 cd ..
@@ -23,6 +24,7 @@ echo ========
 echo
 
 cd yellow-server/src
+bun bun.lockb > bun.lockb.txt
 pwd; git status;
 ../../dev_common_link.sh; e
 gcam $m; gp; e
@@ -32,6 +34,7 @@ echo ========
 echo
 
 cd yellow-server-module-messages/src
+bun bun.lockb > bun.lockb.txt
 pwd; git status;
 ../../dev_common_link.sh; e
 gcam $m; gp; e
@@ -41,6 +44,7 @@ echo ========
 echo
 
 cd yellow-admin/
+bun bun.lockb > bun.lockb.txt
 pwd; git status;
 #../dev_common_link.sh; e
 gcam $m; gp; e
@@ -50,6 +54,7 @@ echo ========
 echo
  
 cd yellow-client/
+bun bun.lockb > bun.lockb.txt
 pwd; git status;
 gcam $m; gp; e
 cd ..
