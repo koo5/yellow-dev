@@ -86,4 +86,4 @@ pwd; git status;
 gca $m; gp; e
 git status
 
-mpv /usr/share/sounds/Oxygen-Im-New-Mail.ogg > /dev/null
+mpv /usr/share/sounds/freedesktop/stereo/trash-empty.oga > /dev/null
