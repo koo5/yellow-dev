@@ -1,6 +1,10 @@
 ## setup
 
 
+0)
+```
+git submodule update --init
+```
 1)
 ```
 cd yellow-server-common; bun i; cd ..

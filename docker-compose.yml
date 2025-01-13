@@ -43,7 +43,11 @@ services:
 
   server:
     network_mode: "host"
-    build: ./yellow-server/
+    build:
+      context: ./yellow-server/
+      args:
+        UID: "${UID:-1000}"
+        GID: "${GID:-1000}"
     volumes:
       - server_tmp:/tmp
       - server_logs:/var/log/yellow
@@ -69,7 +73,11 @@ services:
 
   messages:
     network_mode: "host"
-    build: ./yellow-server-module-messages/
+    build:
+      context: ./yellow-server-module-messages/
+      args:
+        UID: "${UID:-1000}"
+        GID: "${GID:-1000}"
     volumes:
       - ./yellow-server-module-messages:/app/app
       - ./yellow-server-common:/app/yellow-server-common
@@ -90,7 +98,11 @@ services:
 
   admin:
     network_mode: "host"
-    build: ./yellow-admin/
+    build:
+      context: ./yellow-admin/
+      args:
+        UID: "${UID:-1000}"
+        GID: "${GID:-1000}"
     volumes:
       - ./yellow-admin:/app/app
       - ./yellow-server-common:/app/yellow-server-common
@@ -108,7 +120,11 @@ services:
 
   client:
     network_mode: "host"
-    build: ./yellow-client/
+    build:
+      context: ./yellow-client/
+      args:
+        UID: "${UID:-1000}"
+        GID: "${GID:-1000}"
     volumes:
       - ./yellow-client:/app/app
     environment:
