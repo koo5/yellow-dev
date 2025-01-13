@@ -7,7 +7,7 @@ git submodule update --init
 ```
 1)
 ```
-cd yellow-server-common; bun i; cd ..
+cd yellow-server-common; bun i --frozen-lockfile; cd ..
 ```
 2)
 ```
