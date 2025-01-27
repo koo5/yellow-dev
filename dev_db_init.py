@@ -11,7 +11,7 @@ CREATE DATABASE IF NOT EXISTS yellow;
 GRANT ALL ON yellow.* TO username;
 
 CREATE USER  IF NOT EXISTS 'yellow_module_org_libersoft_messages' IDENTIFIED BY 'password';
-CREATE DATABASE  IF NOT EXISTS yellow_module_org_libersoft_messages;
+CREATE DATABASE IF NOT EXISTS yellow_module_org_libersoft_messages;
 GRANT ALL ON yellow_module_org_libersoft_messages.* TO 'yellow_module_org_libersoft_messages';
 
 USE yellow;
@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS modules (id INT PRIMARY KEY AUTO_INCREMENT, name VARC
 CREATE TABLE IF NOT EXISTS logs (id INT PRIMARY KEY AUTO_INCREMENT, level INT NOT NULL, topic TEXT NULL, message TEXT NULL, json JSON NULL, created TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 
 USE yellow_module_org_libersoft_messages;
-CREATE TABLE IF NOT EXISTS messages (id INT PRIMARY KEY AUTO_INCREMENT, id_users INT, uid VARCHAR(255) NOT NULL, address_from VARCHAR(255) NOT NULL, address_to VARCHAR(255) NOT NULL, message TEXT NOT NULL, format VARCHAR(16) NOT NULL DEFAULT "plaintext", seen TIMESTAMP NULL DEFAULT NULL, created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS messages (id INT PRIMARY KEY AUTO_INCREMENT, id_users INT, uid VARCHAR(255) NOT NULL, address_from VARCHAR(255) NOT NULL, address_to VARCHAR(255) NOT NULL, message TEXT NOT NULL, format VARCHAR(16) NOT NULL DEFAULT "plaintext", seen TIMESTAMP NULL DEFAULT NULL, created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS format VARCHAR(16) NOT NULL DEFAULT "plaintext";
 
 USE yellow;
 INSERT INTO admins (username, password) VALUES ('admin', '$argon2id$v=19$m=65536,t=20,p=1$Vmb9bCJSHUOJDiS+amdMkzxTljfkanX0JKsYecdBCkQ$slQjytnGeh4/ScqmXOJ6mjjfdmu/9eVSd6dV032nrm8');
