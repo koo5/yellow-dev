@@ -37,9 +37,15 @@ tail -n 9999999 -f /var/snap/docker/common/var-lib-docker/volumes/yellow-dev_ser
 
 
 
-## prettier
+### prettier
 ```
  npm i --user prettier-plugin-svelte prettier git-format-staged
  set -U fish_user_paths $fish_user_paths ~/node_modules/.bin/
+```
+
+
+### db cleanup
+```
+echo "use yellow_module_org_libersoft_messages; delete from messages; delete from attachments; delete from file_uploads" |  mariadb --protocol=tcp --host=localhost --user=root --password=password --force
 ```
 
