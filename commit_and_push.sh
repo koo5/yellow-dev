@@ -39,7 +39,7 @@ function update_shared_lib_references
     # 1. Get the new commit hash from the shared library
     pushd yellow-server-common
     set newHash (git rev-parse HEAD | string trim)
-    echo "New hash for yellow-server-common: $newHash"
+    echo "current hash for yellow-server-common: $newHash"
     popd
 
     # 2. Update each dependent repo
@@ -48,7 +48,7 @@ function update_shared_lib_references
         "yellow-server-module-messages/src"
 
     for repo in $dependentRepos
-        echo "Updating dependency in $repo"
+        echo "checking dependency in $repo"
         pushd $repo
 
         jq --arg commit "$newHash" '
