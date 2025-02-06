@@ -49,3 +49,10 @@ tail -n 9999999 -f /var/snap/docker/common/var-lib-docker/volumes/yellow-dev_ser
 echo "use yellow_module_org_libersoft_messages; delete from messages; delete from attachments; delete from file_uploads" |  mariadb --protocol=tcp --host=localhost --user=root --password=password --force
 ```
 
+
+### client build
+```
+cd yellow-client;
+
+bun run build; rm -rf client; mv build client;  python3 -m http.server
+```
