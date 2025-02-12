@@ -27,7 +27,6 @@ docker-compose down; docker-compose up --build --remove-orphans
 * https://bun.sh/docs/runtime/debugger
 
 ```
- npm install -g git-format-staged prettier prettier-plugin-svelte
 ```
 ```
 tail -f /var/snap/docker/common/var-lib-docker/volumes/yellow-dev_server_logs/_data/server.log | node node_modules/pino-pretty-min/bin.js
@@ -39,7 +38,7 @@ tail -n 9999999 -f /var/snap/docker/common/var-lib-docker/volumes/yellow-dev_ser
 
 ### prettier
 ```
- npm i --user prettier-plugin-svelte prettier git-format-staged
+ npm install -g git-format-staged prettier prettier-plugin-svelte
  set -U fish_user_paths $fish_user_paths ~/node_modules/.bin/
 ```
 

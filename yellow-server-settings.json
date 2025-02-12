@@ -35,7 +35,7 @@
   "stdout": {
    "enabled": true,
    "levels": [
-    {"modules": "info"},
+    {"modules": "debug"},
     {"auth": "info"},
     {"webserver": "info"},
     {"healthcheck": "warning"},
