@@ -6,6 +6,9 @@ host = sys.argv[1]
 
 print(f"""
 USE yellow;
+ALTER TABLE modules ADD COLUMN IF NOT EXISTS enabled BOOLEAN NOT NULL DEFAULT TRUE;
+
+
 USE yellow_module_org_libersoft_messages;
 
 ALTER TABLE messages ADD COLUMN IF NOT EXISTS format VARCHAR(16) NOT NULL DEFAULT "plaintext";
