@@ -9,9 +9,5 @@
   "user": "yellow_module_org_libersoft_messages",
   "password": "password",
   "name": "yellow_module_org_libersoft_messages"
- },
- "other": {
-  "log_file": "/tmp/module-messages.log",
-  "log_to_file": false
  }
 }

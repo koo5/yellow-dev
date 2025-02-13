@@ -56,7 +56,7 @@
   "json": {
    "enabled": true,
    "name": "/var/log/yellow/json.log",
-   "level": "trace"
+   "level": "debug"
   },
   "elasticsearch": {
    "enabled": false
