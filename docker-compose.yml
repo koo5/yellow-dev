@@ -130,6 +130,7 @@ services:
     environment:
       - VITE_YELLOW_PING_INTERVAL=10000
       - WALLET_PROVIDER_RECONNECT_INTERVAL=1000000
+      - VITE_YELLOW_CLIENT_DEFAULT_ACCOUNTS=[]
     depends_on: {server: {condition: service_healthy}}
     deploy:
       restart_policy:
