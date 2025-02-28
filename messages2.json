@@ -6,8 +6,8 @@
  "database": {
   "host": "127.0.0.1",
   "port": 3306,
-  "user": "org.libersoft.messages2",
+  "user": "messages2",
   "password": "password",
-  "name": "org.libersoft.messages2"
+  "name": "messages2"
  }
 }

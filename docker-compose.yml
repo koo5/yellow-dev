@@ -1,4 +1,4 @@
-version: "3.12"
+#version: "3.12"
 
 services:
 
@@ -116,8 +116,8 @@ services:
         condition: any
     healthcheck:
       test: "curl -v --fail http://localhost:25002/health"
-      #start_interval: 1s #Docker Engine version 25.0 or later
-      interval: 1s
+      start_interval: 1s
+      interval: 30s
       timeout: 20s
       retries: 30
 

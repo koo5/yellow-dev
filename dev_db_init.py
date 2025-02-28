@@ -9,7 +9,7 @@ CREATE USER IF NOT EXISTS username IDENTIFIED BY 'password';
 CREATE DATABASE IF NOT EXISTS yellow;
 GRANT ALL ON yellow.* TO username;
 
-CREATE USER  IF NOT EXISTS 'yellow_module_org_libersoft_messages' IDENTIFIED BY 'password';
+CREATE USER IF NOT EXISTS 'yellow_module_org_libersoft_messages' IDENTIFIED BY 'password';
 CREATE DATABASE IF NOT EXISTS yellow_module_org_libersoft_messages;
 GRANT ALL ON yellow_module_org_libersoft_messages.* TO 'yellow_module_org_libersoft_messages';
 
