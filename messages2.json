@@ -1,0 +1,13 @@
+{
+ "web": {
+  "http_port": 25002,
+  "allow_network": false
+ },
+ "database": {
+  "host": "127.0.0.1",
+  "port": 3306,
+  "user": "org.libersoft.messages2",
+  "password": "password",
+  "name": "org.libersoft.messages2"
+ }
+}

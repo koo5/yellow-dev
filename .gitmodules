@@ -13,3 +13,6 @@
 [submodule "yellow-server-module-messages"]
 	path = yellow-server-module-messages
 	url = git@github.com:libersoft-org/yellow-server-module-messages
+[submodule "messages2"]
+	path = messages2
+	url = git@github.com:libersoft-org/yellow-server-module-messages

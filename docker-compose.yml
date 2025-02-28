@@ -96,6 +96,33 @@ services:
       retries: 30
 
 
+
+  messages2:
+    network_mode: "host"
+    build:
+      context: ./messages2/
+      args:
+        UID: "${UID:-1000}"
+        GID: "${GID:-1000}"
+    volumes:
+      - ./messages2:/app/app
+      - ./yellow-server-common:/app/yellow-server-common
+      - ./messages2.json:/app/settings.json
+    environment:
+      - VITE_YELLOW_SETTINGS_PATH=/app/settings.json
+    depends_on: {mariadb: {condition: service_healthy}}
+    deploy:
+      restart_policy:
+        condition: any
+    healthcheck:
+      test: "curl -v --fail http://localhost:25002/health"
+      #start_interval: 1s #Docker Engine version 25.0 or later
+      interval: 1s
+      timeout: 20s
+      retries: 30
+
+
+
   admin:
     network_mode: "host"
     build:
