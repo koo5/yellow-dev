@@ -127,12 +127,12 @@ services:
   dating2:
     network_mode: "host"
     build:
-      context: ./yellow-server-module-dating2/
+      context: ./yellow-server-module-dating/
       args:
         UID: "${UID:-1000}"
         GID: "${GID:-1000}"
     volumes:
-      - ./yellow-server-module-dating2:/app/app
+      - ./yellow-server-module-dating:/app/app
       - ./yellow-server-common:/app/yellow-server-common
       - ./dating2.json:/app/settings.json
     environment:
