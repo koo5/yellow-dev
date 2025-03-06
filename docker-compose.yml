@@ -59,7 +59,7 @@ services:
     depends_on:
       server-init: {condition: service_completed_successfully}
       mariadb: {condition: service_healthy}
-      messages: {condition: service_healthy}
+      #messages: {condition: service_healthy}
     deploy:
       restart_policy:
         condition: any
@@ -90,8 +90,8 @@ services:
         condition: any
     healthcheck:
       test: "curl -v --fail http://localhost:25001/health"
-      #start_interval: 1s #Docker Engine version 25.0 or later
-      interval: 1s
+      start_interval: 1s
+      interval: 30s
       timeout: 20s
       retries: 30
 
@@ -124,7 +124,7 @@ services:
 
 
 
-  dating2:
+  dating:
     network_mode: "host"
     build:
       context: ./yellow-server-module-dating/
@@ -167,7 +167,8 @@ services:
     healthcheck:
       test: "curl -v --fail http://localhost:4000/#health"
       #start_interval: 1s #Docker Engine version 25.0 or later
-      interval: 1s
+      start_interval: 1s
+      interval: 30s
       timeout: 20s
       retries: 30
 
@@ -192,7 +193,8 @@ services:
     healthcheck:
       test: "curl -v --fail http://localhost:3000/#health"
       #start_interval: 1s #Docker Engine version 25.0 or later
-      interval: 1s
+      start_interval: 1s
+      interval: 30s
       timeout: 20s
       retries: 30
 

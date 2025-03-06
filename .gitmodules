@@ -16,3 +16,6 @@
 [submodule "messages2"]
 	path = messages2
 	url = git@github.com:libersoft-org/yellow-server-module-messages
+[submodule "yellow-client-native"]
+	path = yellow-client-native
+	url = git@github.com:libersoft-org/yellow-client-native/
