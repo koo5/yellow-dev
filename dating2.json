@@ -1,0 +1,45 @@
+{
+ "web": {
+  "http_port": 25003,
+  "allow_network": false
+ },
+ "database": {
+  "host": "127.0.0.1",
+  "port": 3306,
+  "user": "dating2",
+  "password": "password",
+  "name": "dating2"
+ },
+ "log": {
+  "level": "info",
+  "stdout": {
+   "enabled": true,
+   "levels": [
+    {
+     "*": "info"
+    }
+   ]
+  },
+  "file": {
+   "enabled": true,
+   "name": "server.log",
+   "levels": [
+    {
+     "*": "info"
+    }
+   ]
+  },
+  "database": {
+   "enabled": true,
+   "level": "debug"
+  },
+  "json": {
+   "enabled": false,
+   "name": "json.log",
+   "level": "debug"
+  },
+  "elasticsearch": {
+   "enabled": false
+  }
+ }
+}

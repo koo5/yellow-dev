@@ -123,6 +123,33 @@ services:
 
 
 
+
+  dating2:
+    network_mode: "host"
+    build:
+      context: ./yellow-server-module-dating2/
+      args:
+        UID: "${UID:-1000}"
+        GID: "${GID:-1000}"
+    volumes:
+      - ./yellow-server-module-dating2:/app/app
+      - ./yellow-server-common:/app/yellow-server-common
+      - ./dating2.json:/app/settings.json
+    environment:
+      - VITE_YELLOW_SETTINGS_PATH=/app/settings.json
+    depends_on: {mariadb: {condition: service_healthy}}
+    deploy:
+      restart_policy:
+        condition: any
+    healthcheck:
+      test: "curl -v --fail http://localhost:25003/health"
+      start_interval: 1s
+      interval: 30s
+      timeout: 20s
+      retries: 30
+
+
+
   admin:
     network_mode: "host"
     build:

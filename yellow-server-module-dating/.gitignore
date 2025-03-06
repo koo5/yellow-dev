@@ -1,0 +1,10 @@
+node_modules/
+settings.json
+
+**/*.log
+bun.lockb
+bun.lockb.txt
+.secret_git
+.idea
+uploads/*
+.aider*
