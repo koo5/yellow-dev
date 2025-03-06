@@ -1,0 +1,2 @@
+# This is a placeholder for the actual QuickJS WebAssembly binary
+# You'll need to compile QuickJS to WebAssembly and place the binary here
