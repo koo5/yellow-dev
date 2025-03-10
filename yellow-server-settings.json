@@ -35,18 +35,18 @@
   "stdout": {
    "enabled": true,
    "levels": [
-    {"modules": "debug"},
+    {"modules": "info"},
     {"auth": "info"},
     {"webserver": "info"},
     {"healthcheck": "warning"},
-    {"*": "debug"}
+    {"*": "info"}
    ]
   },
   "file": {
    "enabled": true,
    "name": "/var/log/yellow/server.log",
    "levels": [
-    {"*": "info"}
+    {"*": "debug"}
    ]
   },
   "database": {
@@ -55,11 +55,11 @@
   },
   "json": {
    "enabled": true,
-   "name": "/var/log/yellow/json.log",
+   "name": "/var/log/yellow/server-json.log",
    "level": "debug"
   },
   "elasticsearch": {
-   "enabled": false
+   "enabled": true
   }
  },
 

@@ -22,7 +22,7 @@
   },
   "file": {
    "enabled": true,
-   "name": "server.log",
+   "name": "/var/log/yellow/dating2.log",
    "levels": [
     {
      "*": "info"
@@ -35,11 +35,11 @@
   },
   "json": {
    "enabled": false,
-   "name": "json.log",
+   "name": "/var/log/yellow/dating2.log.json",
    "level": "debug"
   },
   "elasticsearch": {
-   "enabled": false
+   "enabled": true
   }
  }
 }

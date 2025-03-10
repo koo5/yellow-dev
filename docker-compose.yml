@@ -79,6 +79,7 @@ services:
         UID: "${UID:-1000}"
         GID: "${GID:-1000}"
     volumes:
+      - server_logs:/var/log/yellow
       - ./yellow-server-module-messages:/app/app
       - ./yellow-server-common:/app/yellow-server-common
       - ./yellow-server-module-messages-settings.json:/app/settings.json
@@ -105,6 +106,7 @@ services:
         UID: "${UID:-1000}"
         GID: "${GID:-1000}"
     volumes:
+      - server_logs:/var/log/yellow
       - ./messages2:/app/app
       - ./yellow-server-common:/app/yellow-server-common
       - ./messages2.json:/app/settings.json
@@ -132,6 +134,7 @@ services:
         UID: "${UID:-1000}"
         GID: "${GID:-1000}"
     volumes:
+      - server_logs:/var/log/yellow
       - ./yellow-server-module-dating:/app/app
       - ./yellow-server-common:/app/yellow-server-common
       - ./dating2.json:/app/settings.json
@@ -198,11 +201,29 @@ services:
       timeout: 20s
       retries: 30
 
+#  elasticsearch:
+#    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
+#    container_name: elasticsearch
+#    environment:
+#      - discovery.type=single-node
+#      - node.name=elastic-1
+#      - cluster.name=docker-logging-cluster
+#      - bootstrap.memory_lock=true
+#      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+#    ulimits:
+#      memlock:
+#        soft: -1
+#        hard: -1
+#    volumes:
+#      - elasticsearch:/usr/share/elasticsearch/data
+#    ports:
+#      - "9200:9200"
 
 volumes:
   mariadb:
   mariadb_tmp:
   server_logs:
   server_tmp:
+#  elasticsearch:
 
 
