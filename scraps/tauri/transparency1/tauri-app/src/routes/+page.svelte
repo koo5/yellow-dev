@@ -44,13 +44,8 @@
 }
 
 :root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 400;
-
-  color: #0f0f0f;
-  background-color: #f6f6f6;
+  color: #f6f6f6;
+  background-color: transparent;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -60,12 +55,11 @@
 }
 
 .container {
-  margin: 0;
-  padding-top: 10vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  text-align: center;
+  color: #f6f6f6;
+  background-color: rgba(47, 47, 47, 0.0);
+  padding: 2em;
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
 }
 
 .logo {
@@ -136,7 +130,7 @@ button {
 @media (prefers-color-scheme: dark) {
   :root {
     color: #f6f6f6;
-    background-color: #2f2f2f;
+    background-color: transparent;
   }
 
   a:hover {
@@ -146,10 +140,10 @@ button {
   input,
   button {
     color: #ffffff;
-    background-color: #0f0f0f98;
+    background-color: rgba(15, 15, 15, 0.6);
   }
   button:active {
-    background-color: #0f0f0f69;
+    background-color: rgba(15, 15, 15, 0.4);
   }
 }
 
