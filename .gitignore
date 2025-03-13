@@ -1,3 +1,5 @@
 mariadb
 node_modules
 .aider*
+
+.puzzle.history.json

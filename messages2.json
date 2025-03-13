@@ -39,7 +39,7 @@
    "level": "debug"
   },
   "elasticsearch": {
-   "enabled": true
+   "enabled": false
   }
  }
 

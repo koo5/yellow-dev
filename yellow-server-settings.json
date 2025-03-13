@@ -35,6 +35,7 @@
   "stdout": {
    "enabled": true,
    "levels": [
+    {"module": "trace"},
     {"modules": "info"},
     {"auth": "info"},
     {"webserver": "info"},
@@ -59,7 +60,7 @@
    "level": "debug"
   },
   "elasticsearch": {
-   "enabled": true
+   "enabled": false
   }
  },
 
