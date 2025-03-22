@@ -11,12 +11,12 @@
   "name": "yellow_module_org_libersoft_messages"
  },
  "log": {
-  "level": "info",
+  "level": "trace",
   "stdout": {
    "enabled": true,
    "levels": [
     {
-     "*": "info"
+     "*": "debug"
     }
    ]
   },
@@ -40,6 +40,9 @@
   },
   "elasticsearch": {
    "enabled": false
+  },
+  "node_child_process_elasticsearch": {
+   "enabled": true
   }
  }
 

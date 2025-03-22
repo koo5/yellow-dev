@@ -36,15 +36,15 @@
    "enabled": true,
    "levels": [
     {"module": "trace"},
-    {"modules": "info"},
+    {"modules": "trace"},
     {"auth": "info"},
-    {"webserver": "info"},
+    {"webserver": "trace"},
     {"healthcheck": "warning"},
-    {"*": "info"}
+    {"*": "trace"}
    ]
   },
   "file": {
-   "enabled": true,
+   "enabled": false,
    "name": "/var/log/yellow/server.log",
    "levels": [
     {"*": "debug"}
@@ -61,6 +61,9 @@
   },
   "elasticsearch": {
    "enabled": false
+  },
+  "node_child_process_elasticsearch": {
+   "enabled": true
   }
  },
 
