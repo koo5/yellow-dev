@@ -35,12 +35,12 @@
   "stdout": {
    "enabled": true,
    "levels": [
-    {"module": "trace"},
-    {"modules": "trace"},
+    {"module": "debug"},
+    {"modules": "debug"},
     {"auth": "info"},
-    {"webserver": "trace"},
+    {"webserver": "debug"},
     {"healthcheck": "warning"},
-    {"*": "trace"}
+    {"*": "debug"}
    ]
   },
   "file": {

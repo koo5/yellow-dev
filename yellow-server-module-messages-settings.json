@@ -16,7 +16,7 @@
    "enabled": true,
    "levels": [
     {
-     "*": "trace"
+     "*": "info"
     }
    ]
   },
