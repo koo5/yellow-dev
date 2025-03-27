@@ -16,7 +16,8 @@
    "enabled": true,
    "levels": [
     {
-     "*": "info"
+     "module-app-base:*": "info",
+     "*": "trace"
     }
    ]
   },

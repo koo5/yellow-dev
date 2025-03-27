@@ -11,6 +11,8 @@
       <excludeFolder url="file://$MODULE_DIR$/yellow-client-native/aider" />
       <excludeFolder url="file://$MODULE_DIR$/messages2" />
       <excludeFolder url="file://$MODULE_DIR$/yellow-server-module-dating" />
+      <excludeFolder url="file://$MODULE_DIR$/yellow-client-native/src-tauri/target" />
+      <excludeFolder url="file://$MODULE_DIR$/yellow-client/build-tauri" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.12" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
