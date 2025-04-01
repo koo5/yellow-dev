@@ -3,7 +3,7 @@
   "standalone": true,
 
   "https_disabled": true,
-  "http_port": 8086,
+  "http_port": 8085,
   "https_port": 4433,
 
   "certificates": [
