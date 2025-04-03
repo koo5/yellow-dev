@@ -31,7 +31,7 @@
    ]
   },
   "database": {
-   "enabled": true,
+   "enabled": false,
    "level": "debug"
   },
   "json": {
@@ -43,7 +43,7 @@
    "enabled": false
   },
   "node_child_process_elasticsearch": {
-   "enabled": true
+   "enabled": false
   }
  }
 
