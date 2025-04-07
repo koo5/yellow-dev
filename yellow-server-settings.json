@@ -37,7 +37,7 @@
    "levels": [
     {"module": "debug"},
     {"modules": "debug"},
-    {"auth": "info"},
+    {"auth": "trace"},
     {"webserver": "debug"},
     {"healthcheck": "warning"},
     {"*": "debug"}
