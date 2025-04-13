@@ -18,6 +18,13 @@ docker-compose down; docker-compose up --build --remove-orphans
 
 ```
  ./dev_db_init.py (hostname) |  mariadb --protocol=tcp --host=localhost --user=root --password=password --force
+
+ cd yellow-server-module-messages/
+ bun --bun knex migrate:latest --migrations-directory src/migrations/
+ cd ..
+
+ ./dev_db_populate.py (hostname) |  mariadb --protocol=tcp --host=localhost --user=root --password=password --force
+
 ```
 4)
 (full stack should be up & healthy now)
