@@ -1,21 +1,21 @@
 [submodule "yellow-server"]
 	path = yellow-server
-	url = git@github.com:libersoft-org/yellow-server
+	url = https://github.com/libersoft-org/yellow-server
 [submodule "yellow-admin"]
 	path = yellow-admin
-	url = git@github.com:libersoft-org/yellow-admin
+	url = https://github.com/libersoft-org/yellow-admin
 [submodule "yellow-client"]
 	path = yellow-client
-	url = git@github.com:libersoft-org/yellow-client
+	url = https://github.com/libersoft-org/yellow-client
 [submodule "yellow-server-common"]
 	path = yellow-server-common
-	url = git@github.com:libersoft-org/yellow-server-common
+	url = https://github.com/libersoft-org/yellow-server-common
 [submodule "yellow-server-module-messages"]
 	path = yellow-server-module-messages
-	url = git@github.com:libersoft-org/yellow-server-module-messages
+	url = https://github.com/libersoft-org/yellow-server-module-messages
 [submodule "messages2"]
 	path = messages2
-	url = git@github.com:libersoft-org/yellow-server-module-messages
+	url = https://github.com/libersoft-org/yellow-server-module-messages
 [submodule "yellow-client-native"]
 	path = yellow-client-native
-	url = git@github.com:libersoft-org/yellow-client-native/
+	url = https://github.com/libersoft-org/yellow-client-native/
