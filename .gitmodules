@@ -22,3 +22,6 @@
 [submodule "rust/plugins-workspace"]
 	path = rust/plugins-workspace
 	url = https://github.com/koo5/plugins-workspace
+[submodule "rust/monitor_work_area"]
+	path = rust/monitor_work_area
+	url = https://github.com/koo5/monitor_work_area
