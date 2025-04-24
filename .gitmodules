@@ -19,3 +19,6 @@
 [submodule "yellow-client-native"]
 	path = yellow-client-native
 	url = https://github.com/libersoft-org/yellow-client-native/
+[submodule "rust/plugins-workspace"]
+	path = rust/plugins-workspace
+	url = https://github.com/koo5/plugins-workspace
