@@ -44,7 +44,7 @@ function update_shared_lib_references
 
     # 2. Update each dependent repo
     set dependentRepos \
-        "yellow-server/src/" \
+        "yellow-server/" \
         "yellow-server-module-messages/"
 
     for repo in $dependentRepos
