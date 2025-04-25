@@ -44,8 +44,8 @@ function update_shared_lib_references
 
     # 2. Update each dependent repo
     set dependentRepos \
-        "yellow-server/src" \
-        "yellow-server-module-messages/src"
+        "yellow-server/" \
+        "yellow-server-module-messages/"
 
     for repo in $dependentRepos
         echo "checking dependency in $repo"
@@ -69,7 +69,7 @@ function update_shared_lib_references
 
         # Commit & push
         git add package.json
-        git add package-lock.json
+        #git add package-lock.json
         git add bun.lock
         git commit -m "bump yellow-server-common to commit $newHash"
 
