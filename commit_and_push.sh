@@ -91,22 +91,22 @@ fish -c "git commit -a $commitMessage"; gp; e
 cd ..
 
 
-cd yellow-server/src
+cd yellow-server/
 #bun bun.lockb > bun.lockb.txt
 pwd; git status;
-../../dev_common_link.sh; e
+../dev_common_link.sh; e
 fish -c "git commit -a $commitMessage"; gp; e
-cd ../..
+cd ..
 
 echo
 echo ========
 echo
 
-cd yellow-server-module-messages/src
+cd yellow-server-module-messages
 pwd; git status;
-../../dev_common_link.sh; e
+../dev_common_link.sh; e
 fish -c "git commit -a $commitMessage"; gp; e
-cd ../..
+cd ..
 
 echo
 echo ========
