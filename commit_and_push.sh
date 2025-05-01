@@ -2,7 +2,7 @@
 
 function e; or status --is-interactive; or exit 1; end
 
-nvm use;
+#nvm use;
 
 # Helper function to get a commit message from argv or open an editor
 function get_commit_message
