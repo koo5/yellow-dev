@@ -72,6 +72,7 @@ function update_shared_lib_references
         #git add package-lock.json
         git add bun.lock
         git commit -m "bump yellow-server-common to commit $newHash"
+		gp
 
         popd
     end
