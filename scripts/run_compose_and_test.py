@@ -99,6 +99,14 @@ def main():
         if not service_ready:
             print("Service did not start properly")
             sys.exit(1)
+            
+        # Now that Docker is up, set up the database
+        print("\n========== SETTING UP DATABASE ==========")
+        db_setup_result = run_command(["fish", "./scripts/ci_db.sh"], cwd=project_root)
+        
+        if db_setup_result != 0:
+            print("Database setup failed")
+            sys.exit(1)
         
         # Define paths
         client_dir = os.path.join(project_root, "yellow-client")
