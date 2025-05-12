@@ -80,13 +80,21 @@ def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
     
-    test_result = 1  # Default to failure
+    # Initialize state variables
+    test_status = 1  # Default to failure
+    output_log = []  # Initialize empty log
+    docker_thread = None
+    stop_event = None
+    service_ready = False
+    failure_reason = "Unknown error"
+    test_phase = "initialization"  # Track which phase we're in
     
     try:
         # Create an event to signal when to stop Docker Compose
         stop_event = threading.Event()
         
         # Start Docker Compose in a separate thread
+        test_phase = "docker_startup"
         docker_thread = threading.Thread(
             target=run_docker_compose,
             args=(project_root, stop_event)
@@ -97,24 +105,29 @@ def main():
         service_ready = wait_for_service("http://localhost:3000")
         
         if not service_ready:
+            failure_reason = "Service did not start properly after multiple attempts"
             print("Service did not start properly")
-            sys.exit(1)
+            raise Exception(failure_reason)
             
         # Now that Docker is up, set up the database
+        test_phase = "database_setup" 
         print("\n========== SETTING UP DATABASE ==========")
         db_setup_result = run_command(["fish", "./scripts/ci_db.sh"], cwd=project_root)
         
         if db_setup_result != 0:
+            failure_reason = f"Database setup failed with exit code: {db_setup_result}"
             print("Database setup failed")
-            sys.exit(1)
+            raise Exception(failure_reason)
         
         # Define paths
         client_dir = os.path.join(project_root, "yellow-client")
+        html_report_dir = os.path.join(client_dir, "playwright-report")
         
-        # Set up to capture detailed output
-        output_log = []
+        # Prepare for test execution
+        test_phase = "test_execution"
         
         # Run playwright tests and capture output
+        print("\n========== RUNNING PLAYWRIGHT TESTS ==========")
         process = subprocess.Popen(
             [
                 "npx", "playwright", "test", 
@@ -128,29 +141,30 @@ def main():
         )
         
         # Stream output to console and save for later
-        print("\n========== RUNNING PLAYWRIGHT TESTS ==========")
         for line in process.stdout:
             sys.stdout.write(line)
             output_log.append(line.strip())
         
         process.wait()
-        test_result = process.returncode
+        test_status = process.returncode
         
-        # Capture test result and file paths for report generation later
-        test_status = test_result
-        json_report_file = os.path.join(client_dir, "test-results", "playwright-report.json")
-        html_report_dir = os.path.join(client_dir, "playwright-report")
+        # If tests passed, update our tracking variables
+        if test_status == 0:
+            failure_reason = None
         
     except Exception as e:
-        print(f"Error during test execution: {e}")
+        print(f"Error during {test_phase}: {e}")
         test_status = 1
+        # If we don't already have a specific failure reason, use the exception message
+        if failure_reason == "Unknown error":
+            failure_reason = str(e)
     
     finally:
         print("\n========== CLEANUP ==========")
         print("Shutting down Docker Compose...")
         
         # If we started the Docker thread, shut it down
-        if 'stop_event' in locals() and 'docker_thread' in locals():
+        if stop_event and docker_thread:
             stop_event.set()
             docker_thread.join(timeout=10)
         
@@ -160,17 +174,23 @@ def main():
         # Now print the test results after Docker is down
         print("\n========== PLAYWRIGHT TEST RESULTS ==========")
         
-        # Simply print the captured output
-        print("\nTest Output:")
-        for line in output_log:
-            print(line)
+        # Simply print the captured output if we have any
+        if output_log:
+            print("\nTest Output:")
+            for line in output_log:
+                print(line)
+        else:
+            print("\nNo test output captured - tests were not executed")
         
-        # Print overall result
-        result_str = "PASSED" if test_status == 0 else "FAILED"
-        print(f"\nPlaywright tests {result_str} with exit code: {test_status}")
+        # Print overall result based on which phase we're in
+        if test_phase == "test_execution":
+            result_str = "PASSED" if test_status == 0 else "FAILED"
+            print(f"\nPlaywright tests {result_str} with exit code: {test_status}")
+        else:
+            print(f"\nTests FAILED during {test_phase} phase")
         
         # Check for HTML report directory
-        if 'html_report_dir' in locals() and os.path.exists(html_report_dir):
+        if html_report_dir and os.path.exists(html_report_dir):
             print(f"Full HTML report available in: {html_report_dir}")
         
         # Final summary
@@ -179,6 +199,11 @@ def main():
             print("✅ TESTS PASSED")
         else:
             print("❌ TESTS FAILED")
+            
+            # Print specific failure reason 
+            if failure_reason:
+                print(f"Reason: {failure_reason}")
+                    
         print(f"Exit code: {test_status}")
         print("===========================================\n")
         
