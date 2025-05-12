@@ -2,7 +2,7 @@
 
 function e; or status --is-interactive; or exit 1; end
 
-nvm use;
+#nvm use;
 
 # Helper function to get a commit message from argv or open an editor
 function get_commit_message
@@ -72,6 +72,7 @@ function update_shared_lib_references
         #git add package-lock.json
         git add bun.lock
         git commit -m "bump yellow-server-common to commit $newHash"
+		gp
 
         popd
     end

@@ -14,6 +14,7 @@
       <excludeFolder url="file://$MODULE_DIR$/yellow-client-native/src-tauri/target" />
       <excludeFolder url="file://$MODULE_DIR$/yellow-client/build-tauri" />
       <excludeFolder url="file://$MODULE_DIR$/yellow-client-native/yellow-client" />
+      <excludeFolder url="file://$MODULE_DIR$/scraps" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.12" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
