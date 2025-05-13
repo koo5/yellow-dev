@@ -9,8 +9,11 @@ ENV = os.environ.copy()
 ENV["PYTHONUNBUFFERED"] = "1"
 outputs = []
 
+def toilet(text):
+  subprocess.run(shlex.split('toilet -s -f future') + [text])
+
 for cmd in COMMANDS:
-  subprocess.run(shlex.split('toilet -s -f future') + [cmd])
+  toilet(cmd)
   SHELL = ["fish", "-c", cmd]
   output_lines = []
 
@@ -31,7 +34,7 @@ for cmd in COMMANDS:
   outputs.append((cmd, output))
 
 prompt = f"""'eg' is an alias for running the argument as a command in every git submodule.
-'gpl' is an alias for 'git pull'. I run a sequence of commands. First i pull every submodule, then i pull the main repo, then i makes sure each submodule points to the latest main again. Review the series of outputs and answer with OK or by pointing out any indicated issues, things to be aware of regarding the indicated state of the repositories, or anything unexpected. If you notice issues, limit your answer to bullet-points. I am a git expert and I know what I am doing. I am not looking for a summary of the output or tips, but rather for issues pointed out by the outputs. Stay concise."""
+'gpl' is an alias for 'git pull'. I run a sequence of commands. First i pull every submodule, then i pull the main repo, then i makes sure each submodule points to the latest main again. Review the series of outputs and answer with OK or by pointing out any indicated issues, things to be aware of regarding the indicated state of the repositories, or anything unexpected. Stay very concise. If you notice issues, limit your answer to bullet-points. I am a git expert and I know what I am doing. I am not looking for a summary of the output or tips, but rather for issues pointed out by the outputs. """
 
 
 for cmd, output in outputs:
@@ -42,6 +45,6 @@ for cmd, output in outputs:
 """
 
 print()
-print(prompt)
-print("Prompting LLM...")
+#print(prompt)
+toilet("Prompting LLM...")
 subprocess.run(["llm", prompt], env=ENV)
