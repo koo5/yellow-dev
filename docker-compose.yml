@@ -27,10 +27,10 @@ services:
         condition: any
     network_mode: "host"
     healthcheck:
-      test: "/bin/true"
-      #test: "echo exit | mysql  --protocol=tcp --host=localhost --user=root --password=password yellow"
-      #start_interval: 1s #Docker Engine version 25.0 or later
-      interval: 1s
+      #test: "/bin/true"
+      test: "echo exit | mysql  --protocol=tcp --host=localhost --user=root --password=password yellow"
+      start_interval: 1s #Docker Engine version 25.0 or later
+      interval: 10s
       timeout: 20s
       retries: 30
 
@@ -65,8 +65,8 @@ services:
         condition: any
     healthcheck:
       test: "curl -v --fail http://localhost:8085/health"
-      #start_interval: 1s #Docker Engine version 25.0 or later
-      interval: 1s
+      start_interval: 1s #Docker Engine version 25.0 or later
+      interval: 10s
       timeout: 20s
       retries: 30
 
@@ -169,8 +169,7 @@ services:
         condition: any
     healthcheck:
       test: "curl -v --fail http://localhost:4000/#health"
-      #start_interval: 1s #Docker Engine version 25.0 or later
-      start_interval: 1s
+      start_interval: 1s #Docker Engine version 25.0 or later
       interval: 30s
       timeout: 20s
       retries: 30
@@ -192,14 +191,13 @@ services:
       - VITE_YELLOW_CLIENT_DEBUG=true
       - COMMAND="${CLIENT_COMMAND:-./start-docker-dev.sh}"
 
-    depends_on: {server: {condition: service_healthy}}
+    #depends_on: {server: {condition: service_healthy}}
     deploy:
       restart_policy:
         condition: any
     healthcheck:
       test: "curl -v --fail http://localhost:3000/#health"
-      #start_interval: 1s #Docker Engine version 25.0 or later
-      start_interval: 1s
+      start_interval: 1s #Docker Engine version 25.0 or later
       interval: 30s
       timeout: 20s
       retries: 30

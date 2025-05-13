@@ -70,26 +70,78 @@ def wait_for_service(url, max_attempts=300, delay=2):
     logger.error(f"Service at {url} did not become available after {max_attempts} attempts.")
     return False
 
+def wait_for_container_healthy(container_name, max_attempts=60, delay=5):
+    logger.info(f"Waiting for container '{container_name}' to be healthy (max_attempts={max_attempts}, delay={delay}s)...")
+    attempts = 0
+    while attempts < max_attempts:
+        try:
+            cmd = ["docker", "inspect", f"--format='{{{{.State.Health.Status}}}}'", container_name]
+            # Log the command being run
+            logger.debug(f"Running health check command: {' '.join(cmd)}")
+            process = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                check=False 
+            )
+            
+            status = process.stdout.strip().replace("'", "") 
+            
+            if process.returncode == 0:
+                logger.debug(f"Container '{container_name}' health check attempt {attempts + 1}: status is '{status}'")
+                if status == "healthy":
+                    logger.info(f"Container '{container_name}' is healthy.")
+                    return True
+                elif status == "unhealthy":
+                    logger.error(f"Container '{container_name}' reported as unhealthy.")
+                    return False 
+            else:
+                # This case can happen if the container doesn't exist (yet) or docker command fails
+                logger.warning(f"Failed to get health status for container '{container_name}' on attempt {attempts + 1}. Docker inspect stderr: {process.stderr.strip()}")
+
+        except Exception as e:
+            logger.warning(f"Exception while checking health of container '{container_name}' on attempt {attempts + 1}: {e}")
+            
+        attempts += 1
+        logger.info(f"Attempt {attempts}/{max_attempts} - Container '{container_name}' not healthy yet, waiting {delay} seconds...")
+        time.sleep(delay)
+        
+    logger.error(f"Container '{container_name}' did not become healthy after {max_attempts} attempts.")
+    return False
+
 def run_docker_compose(project_root, stop_event):
     logger.info("Starting Docker Compose...")
     logger.debug(f"Project root for Docker Compose: {project_root}")
+    
+    # Get UID and GID
+    uid = str(os.getuid())
+    gid = str(os.getgid())
+    logger.info(f"Setting UID={uid} and GID={gid} for Docker Compose.")
+    
+    # Prepare environment for Docker Compose
+    compose_env = os.environ.copy()
+    compose_env["UID"] = uid
+    compose_env["GID"] = gid
+    compose_env["CI"] = "true"
+    
     cmd = ["docker", "compose", "up", "--build", "--remove-orphans"]
-    logger.info(f"Running Docker Compose command: {shlex.join(cmd)}")
+    logger.info(f"Running Docker Compose command: {shlex.join(cmd)} with UID={uid} GID={gid}")
     
     process = subprocess.Popen(
-        ["docker", "compose", "up", "--build", "--remove-orphans"],
+        cmd,
         cwd=project_root,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        text=True
+        text=True,
+        env=compose_env
     )
     
     # Log Docker Compose output
     if process.stdout:
         for line in iter(process.stdout.readline, ''):
+            logger.info(f"[Docker Compose] {line.strip()}")
             if stop_event.is_set(): # Check if stop event is set while reading output
                 break
-            logger.info(f"[Docker Compose] {line.strip()}")
             if process.poll() is not None: # Check if process terminated while reading
                 break
     
@@ -153,6 +205,17 @@ def main():
         
         if not service_ready:
             failure_reason = f"Service at {service_url} did not start properly after multiple attempts"
+            logger.error(failure_reason)
+            raise Exception(failure_reason)
+
+        # Wait for MariaDB container to be healthy.
+        # The container_name is 'mariadb' as defined in docker-compose.yml
+        mariadb_container_name = "mariadb"
+        logger.info(f"Waiting for MariaDB container ('{mariadb_container_name}') to be healthy...")
+        mariadb_healthy = wait_for_container_healthy(mariadb_container_name)
+        
+        if not mariadb_healthy:
+            failure_reason = f"MariaDB container ('{mariadb_container_name}') did not become healthy."
             logger.error(failure_reason)
             raise Exception(failure_reason)
             
