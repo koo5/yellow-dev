@@ -27,7 +27,7 @@ services:
         condition: any
     network_mode: "host"
     healthcheck:
-      #test: "/bin/true"
+      #test: "/bin/true" mysql  2>&1 | grep connect something ??
       test: "echo exit | mysql  --protocol=tcp --host=localhost --user=root --password=password yellow"
       start_interval: 1s #Docker Engine version 25.0 or later
       interval: 10s
