@@ -28,11 +28,25 @@ services:
     network_mode: "host"
     healthcheck:
       #test: "/bin/true" mysql  2>&1 | grep connect something ??
-      test: "echo exit | mysql  --protocol=tcp --host=localhost --user=root --password=password yellow"
+      test: "mariadb --protocol=tcp --host=localhost --user=workaround --password=whyistherenoping --force 2>&1 | grep -v \"Can't connect to server\""
       start_interval: 1s #Docker Engine version 25.0 or later
       interval: 10s
       timeout: 20s
       retries: 30
+
+
+  common-init:
+    network_mode: "host"
+    build:
+      context: ./yellow-server-common/
+      args:
+        UID: "${UID:-1000}"
+        GID: "${GID:-1000}"
+    volumes:
+      - ./yellow-server-common:/app/yellow-server-common
+    command: ["sh", "-c", "cd /app/yellow-server-common; ~/.bun/bin/bun i --frozen-lockfile"]
+    entrypoint: []
+
 
   server-init:
     image: alpine
@@ -57,6 +71,7 @@ services:
     environment:
       - VITE_YELLOW_SETTINGS_PATH=/app/settings.json
     depends_on:
+      common-init: {condition: service_completed_successfully}
       server-init: {condition: service_completed_successfully}
       mariadb: {condition: service_healthy}
       #messages: {condition: service_healthy}
@@ -85,7 +100,9 @@ services:
       - ./yellow-server-module-messages-settings.json:/app/settings.json
     environment:
       - VITE_YELLOW_SETTINGS_PATH=/app/settings.json
-    depends_on: {mariadb: {condition: service_healthy}}
+    depends_on:
+      common-init: {condition: service_completed_successfully}
+      mariadb: {condition: service_healthy}
     deploy:
       restart_policy:
         condition: any

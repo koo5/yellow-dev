@@ -170,6 +170,7 @@ def run_docker_compose(project_root, stop_event):
 
 
 def main():
+
     logger.info("Starting test execution script.")
     # Get the root directory of the project
     script_dir = os.path.dirname(os.path.abspath(__file__))

@@ -3,7 +3,7 @@ import os
 import shlex
 import subprocess
 
-COMMANDS = ["eg 'git checkout main'", "gpl", "eg 'git checkout main'"]
+COMMANDS = ["eg 'git checkout main; gpl'", "gpl", "eg 'git checkout main'"]
 
 ENV = os.environ.copy()
 ENV["PYTHONUNBUFFERED"] = "1"
