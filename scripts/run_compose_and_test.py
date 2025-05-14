@@ -241,7 +241,7 @@ def main():
         
         logger.info("========== RUNNING PLAYWRIGHT TESTS ==========")
         playwright_test_command = [
-            "npx", "playwright", "test", 
+            "bun", "x", "playwright", "test",
             "src/modules/org.libersoft.messages/tests/e2e/everything.test.ts",
             "--reporter=line"
         ]
