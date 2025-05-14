@@ -97,7 +97,7 @@ def wait_for_container_healthy(container_name, max_attempts=60, delay=5):
                     return False 
             else:
                 # This case can happen if the container doesn't exist (yet) or docker command fails
-                logger.warning(f"Failed to get health status for container '{container_name}' on attempt {attempts + 1}. Docker inspect stderr: {process.stderr.strip()}")
+                logger.debug(f"Failed to get health status for container '{container_name}' on attempt {attempts + 1}. Docker inspect stderr: {process.stderr.strip()}")
 
         except Exception as e:
             logger.warning(f"Exception while checking health of container '{container_name}' on attempt {attempts + 1}: {e}")
