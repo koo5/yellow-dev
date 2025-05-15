@@ -71,7 +71,7 @@ services:
       - ./yellow-server-settings.json:/app/settings.json
     environment:
       - VITE_YELLOW_SETTINGS_PATH=/app/settings.json
-      - CI="${CI}"
+      - CI=${CI:-}
     depends_on:
       common-init: {condition: service_completed_successfully}
       server-init: {condition: service_completed_successfully}
@@ -102,7 +102,7 @@ services:
       - ./yellow-server-module-messages-settings.json:/app/settings.json
     environment:
       - VITE_YELLOW_SETTINGS_PATH=/app/settings.json
-      - CI="${CI}"
+      - CI=${CI:-}
     depends_on:
       common-init: {condition: service_completed_successfully}
       mariadb: {condition: service_healthy}
