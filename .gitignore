@@ -1,6 +1,4 @@
 mariadb
 node_modules
 .aider*
-
 .puzzle.history.json
-scraps/tauri/transparency1/tauri-app/.idea/inspectionProfiles/
