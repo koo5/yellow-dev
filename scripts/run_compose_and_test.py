@@ -136,10 +136,7 @@ def run_docker_compose(project_root, stop_event):
     compose_env["UID"] = uid
     compose_env["GID"] = gid
     compose_env["CI"] = "true" if is_ci else "false"
-    compose_env["IS_CI"] = "1" if is_ci else "0"
-    compose_env["COMPOSE_DOCKER_CLI_BUILD"] = "1"
-    compose_env["DOCKER_BUILDKIT"] = "1"
-    
+
     # Use different docker-compose command based on environment
     if is_ci:
         # In CI we want to use the self-contained version without bind mounts
@@ -301,8 +298,7 @@ services:
         # Pass CI environment variable to database setup script
         db_setup_env = os.environ.copy()
         db_setup_env["CI"] = "true" if is_ci else "false"
-        db_setup_env["IS_CI"] = "1" if is_ci else "0"
-        
+
         # Run db setup with CI env vars
         db_setup_result = run_command(db_setup_command, cwd=project_root, env=db_setup_env)
         
@@ -328,8 +324,7 @@ services:
         # Pass CI flag to the test environment
         playwright_env = os.environ.copy()
         playwright_env["CI"] = "true" if is_ci else "false" 
-        playwright_env["IS_CI"] = "1" if is_ci else "0"
-        
+
         process = subprocess.Popen(
             playwright_test_command,
             stdout=subprocess.PIPE,

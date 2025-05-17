@@ -120,17 +120,8 @@ jobs:
         USER_ID=$(id -u)
         GROUP_ID=$(id -g)
         
-        # Create .env file for docker-compose WITHOUT buildx settings
         cat > .env << EOF
-        # Disable BuildKit completely
-        DOCKER_BUILDKIT=0
-        COMPOSE_DOCKER_CLI_BUILD=0
-        # Set UID/GID for containers
-        UID=$USER_ID
-        GID=$GROUP_ID
-        # Set CI flag for containers
         CI=true
-        IS_CI=1
         EOF
         
         # Display .env file for debugging
@@ -139,7 +130,7 @@ jobs:
         
         # Check if docker-compose.ci.yml exists
         if [ ! -f "docker-compose.ci.yml" ]; then
-          echo "Warning: docker-compose.ci.yml not found. The script will create a default one."
+          echo "Warning: docker-compose.ci.yml not found."
         fi
         
         # Check for Dockerfiles in service contexts
@@ -148,16 +139,9 @@ jobs:
           if [ -f "$dir/Dockerfile" ]; then
             echo "✅ $dir/Dockerfile exists"
           else
-            echo "❌ $dir/Dockerfile is missing" 
+            echo "❌ $dir/Dockerfile is missing"  
           fi
         done
         
-        # Run docker compose config to validate configuration
-        docker compose -f docker-compose.yml -f docker-compose.ci.yml config > docker-compose.merged.yml
-        echo "Generated merged Docker Compose configuration in docker-compose.merged.yml"
-        
-        # Run the tests with explicit docker compose syntax WITHOUT buildx
-        DOCKER_BUILDKIT=0 \
-        COMPOSE_DOCKER_CLI_BUILD=0 \
-        CI=true IS_CI=1 USER_ID=$USER_ID GROUP_ID=$GROUP_ID \
+        CI=true \
         python scripts/run_compose_and_test.py

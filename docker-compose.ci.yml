@@ -3,50 +3,20 @@
 # This file contains overrides for docker-compose.yml that make services work properly in CI environments.
 # The main changes are:
 # 1. In CI, we do NOT use bind mounts - we copy code into the container during build
-# 2. Fixed UID/GID values in CI for better layer caching
-# 3. Skip any symlinks to external directories
-# 4. No persistent data storage between test runs
 
 services:
   # Yellow Server service - CI-specific configuration
   server:
-    build:
-      args:
-        # Pass CI flag to Dockerfile
-        IS_CI: 1
-        # Use fixed UIDs in CI for better caching
-        UID: 1000
-        GID: 1000
-    # Instead of bind mounts from docker-compose.yml, use completely empty volumes list
     volumes: []  # No volumes needed for CI
 
   # Database service - CI-specific configuration
   mariadb:
-    # No persistent storage needed in CI
     volumes: []  # No volumes needed for CI
 
   # Yellow Client service - CI-specific configuration  
   client:
-    build:
-      args:
-        # Pass CI flag to Dockerfile
-        IS_CI: 1
-        # Use fixed UIDs in CI for better caching
-        UID: 1000
-        GID: 1000
-    # No volumes needed for CI
     volumes: []
 
   # Message module - CI-specific configuration
   messages:
-    build:
-      args:
-        # Pass CI flag to Dockerfile
-        IS_CI: 1
-        # Use fixed UIDs in CI for better caching
-        UID: 1000
-        GID: 1000
-      # Explicitly specify the context to resolve "Dockerfile not found" errors
-      context: ./yellow-server-module-messages/
-    # No volumes needed for CI
     volumes: []
