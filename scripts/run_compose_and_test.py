@@ -208,25 +208,7 @@ def main():
     try:
         logger.info("Creating stop event for Docker Compose thread.")
         stop_event = threading.Event()
-        
-        # Check if docker-compose.ci.yml exists when in CI mode
-        if is_ci and not os.path.exists(os.path.join(project_root, "docker-compose.ci.yml")):
-            logger.warning("CI mode active but docker-compose.ci.yml not found. Creating a default CI override.")
-            # Create a minimal docker-compose.ci.yml if it doesn't exist
-            with open(os.path.join(project_root, "docker-compose.ci.yml"), "w") as f:
-                f.write("""# CI-specific overrides for docker-compose.yml
-version: '3.8'
-# This file contains CI-specific overrides for docker-compose.yml
-# It removes bind mounts and makes containers self-contained
-services:
-  # Override service configs as needed for CI
-  # Example:
-  # web:
-  #   volumes:
-  #     # Remove bind mounts, let docker copy files during build
-  #     - /build
-""")
-        
+
         test_phase = "docker_startup"
         logger.info(f"Entering phase: {test_phase}")
         docker_thread = threading.Thread(
