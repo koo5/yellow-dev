@@ -87,11 +87,7 @@ jobs:
         
         # Verify docker-compose script works
         docker-compose version
-    
-    - name: Print directory structure
-      run: |
-        find . -type d -maxdepth 3
-    
+
     - name: Install playwright
       run: |
         cd yellow-dev/yellow-client
