@@ -112,16 +112,16 @@ jobs:
           exit 1
         fi
         
-        # Get UID and GID (same as in run_compose_and_test.py)
-        UID=$(id -u)
-        GID=$(id -g)
+        # Get User and Group IDs using different variable names to avoid readonly variables
+        USER_ID=$(id -u)
+        GROUP_ID=$(id -g)
         
         # Create .env file for docker-compose
         echo "COMPOSE_DOCKER_CLI_BUILD=1" > .env
         echo "DOCKER_BUILDKIT=1" >> .env
         echo "BUILDKIT_PROGRESS=plain" >> .env
-        echo "UID=$UID" >> .env
-        echo "GID=$GID" >> .env
+        echo "UID=$USER_ID" >> .env
+        echo "GID=$GROUP_ID" >> .env
         echo "CI=true" >> .env
         
         # Add cache export configuration to docker-compose build commands
@@ -147,8 +147,8 @@ jobs:
           docker buildx build \
             --builder=${{ steps.buildx.outputs.name }} \
             --tag $image_name \
-            --build-arg UID=$UID \
-            --build-arg GID=$GID \
+            --build-arg UID=$USER_ID \
+            --build-arg GID=$GROUP_ID \
             --cache-from type=local,src=/tmp/.buildx-cache \
             --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
             --load \
@@ -160,4 +160,5 @@ jobs:
         mv /tmp/.buildx-cache-new /tmp/.buildx-cache || true
         
         # Now run the tests (docker-compose will skip building images that were already built)
-        python scripts/run_compose_and_test.py
+        # Use environment variables to pass USER_ID and GROUP_ID to the Python script
+        USER_ID=$USER_ID GROUP_ID=$GROUP_ID python scripts/run_compose_and_test.py

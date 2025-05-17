@@ -113,9 +113,11 @@ def run_docker_compose(project_root, stop_event):
     logger.info("Starting Docker Compose...")
     logger.debug(f"Project root for Docker Compose: {project_root}")
     
-    # Get UID and GID
-    uid = str(os.getuid())
-    gid = str(os.getgid())
+    # Get UID and GID - try from env vars first (for GitHub Actions), fall back to id command
+    # Use USER_ID and GROUP_ID env vars if they exist, otherwise use id commands
+    uid = os.environ.get('USER_ID', str(os.getuid()))
+    gid = os.environ.get('GROUP_ID', str(os.getgid()))
+    
     logger.info(f"Setting UID={uid} and GID={gid} for Docker Compose.")
     
     # Prepare environment for Docker Compose
