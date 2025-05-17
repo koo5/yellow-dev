@@ -9,7 +9,7 @@
 
 services:
   # Yellow Server service - CI-specific configuration
-  yellow-server:
+  server:
     build:
       args:
         # Pass CI flag to Dockerfile
@@ -28,7 +28,7 @@ services:
     volumes: []  # No volumes needed for CI
 
   # Yellow Client service - CI-specific configuration  
-  yellow-client:
+  client:
     build:
       args:
         # Pass CI flag to Dockerfile
@@ -42,7 +42,7 @@ services:
     volumes: []
 
   # Message module - CI-specific configuration
-  yellow-module-messages:
+  messages:
     build:
       args:
         # Pass CI flag to Dockerfile
@@ -50,5 +50,7 @@ services:
         # Use fixed UIDs in CI for better caching
         UID: 1000
         GID: 1000
+      # Explicitly specify the context to resolve "Dockerfile not found" errors
+      context: ./yellow-server-module-messages/
     # No volumes needed for CI
     volumes: []
