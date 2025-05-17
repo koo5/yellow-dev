@@ -1,5 +1,4 @@
 # CI-specific overrides for docker-compose.yml
-version: '3.8'
 
 # This file contains overrides for docker-compose.yml that make services work properly in CI environments.
 # The main changes are:

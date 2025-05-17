@@ -147,6 +147,31 @@ def run_docker_compose(project_root, stop_event):
             "docker", "compose", 
             "-f", "docker-compose.yml",
             "-f", "docker-compose.ci.yml",
+            "config"  # First generate and check the merged configuration
+        ]
+        
+        # Run the config command to validate and debug issues
+        try:
+            config_process = subprocess.run(
+                cmd,
+                cwd=project_root,
+                check=True,
+                capture_output=True,
+                text=True,
+                env=compose_env
+            )
+            logger.info("Docker Compose configuration validated successfully")
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Docker Compose configuration error: {e}")
+            logger.error(f"STDOUT: {e.stdout}")
+            logger.error(f"STDERR: {e.stderr}")
+            raise
+            
+        # Now proceed with the actual up command
+        cmd = [
+            "docker", "compose", 
+            "-f", "docker-compose.yml",
+            "-f", "docker-compose.ci.yml",
             "up", "--build", "--remove-orphans"
         ]
     else:

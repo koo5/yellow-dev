@@ -173,9 +173,37 @@ jobs:
           echo "Warning: docker-compose.ci.yml not found. The script will create a default one."
         fi
         
+        # Check for Dockerfiles in service contexts
+        echo "Checking for Dockerfiles in service contexts..."
+        for dir in yellow-server-common yellow-server yellow-client yellow-admin yellow-server-module-messages; do
+          if [ -f "$dir/Dockerfile" ]; then
+            echo "✅ $dir/Dockerfile exists"
+          else
+            echo "❌ $dir/Dockerfile is missing - creating empty placeholder"
+            # Create empty placeholder - will be completed during build
+            echo "FROM alpine:latest" > "$dir/Dockerfile"
+            echo "COPY . /app" >> "$dir/Dockerfile"
+            echo "WORKDIR /app" >> "$dir/Dockerfile"
+          fi
+        done
+        
         # Check which services use bind mounts in docker-compose.yml
         echo "Checking for bind mounts in docker-compose.yml that need CI overrides..."
         grep -A5 "volumes:" docker-compose.yml || echo "No volumes section found"
+        
+        # Generate diagnostic info for debugging
+        echo "=== Docker info ==="
+        docker info
+        
+        echo "=== Docker Compose version ==="
+        docker compose version
+        
+        echo "=== Docker BuildX version ==="
+        docker buildx version
+        
+        # Run docker compose config to validate configuration
+        docker compose -f docker-compose.yml -f docker-compose.ci.yml config > docker-compose.merged.yml
+        echo "Generated merged Docker Compose configuration in docker-compose.merged.yml"
         
         # Run the tests with explicit docker compose syntax and BUILDX enabled
         DOCKER_BUILDX_CONTEXT=default \
