@@ -210,7 +210,7 @@ jobs:
         DOCKER_BUILDKIT=1 \
         BUILDKIT_PROGRESS=plain \
         CI=true IS_CI=1 USER_ID=$USER_ID GROUP_ID=$GROUP_ID \
-        python scripts/run_compose_and_test.py
+        COMPOSE_BAKE=true python scripts/run_compose_and_test.py
         
         # Move cache for next run
         if [ -d "/tmp/.buildx-cache-new" ]; then
