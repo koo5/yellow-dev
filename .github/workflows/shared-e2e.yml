@@ -179,11 +179,7 @@ jobs:
           if [ -f "$dir/Dockerfile" ]; then
             echo "✅ $dir/Dockerfile exists"
           else
-            echo "❌ $dir/Dockerfile is missing - creating empty placeholder"
-            # Create empty placeholder - will be completed during build
-            echo "FROM alpine:latest" > "$dir/Dockerfile"
-            echo "COPY . /app" >> "$dir/Dockerfile"
-            echo "WORKDIR /app" >> "$dir/Dockerfile"
+            echo "❌ $dir/Dockerfile is missing 
           fi
         done
         
