@@ -17,6 +17,8 @@ services:
         # Use fixed UIDs in CI for better caching
         UID: 1000
         GID: 1000
+      # Explicitly specify the context to resolve "Dockerfile not found" errors  
+      context: ./yellow-server/
     # Instead of bind mounts from docker-compose.yml, use completely empty volumes list
     volumes: []  # No volumes needed for CI
 
@@ -34,6 +36,8 @@ services:
         # Use fixed UIDs in CI for better caching
         UID: 1000
         GID: 1000
+      # Explicitly specify the context to resolve "Dockerfile not found" errors  
+      context: ./yellow-client/
     # No volumes needed for CI
     volumes: []
 
