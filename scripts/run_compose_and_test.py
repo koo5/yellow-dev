@@ -118,18 +118,9 @@ def run_docker_compose(project_root, stop_event):
     is_ci = os.environ.get('CI', 'false').lower() == 'true'
     logger.info(f"Running in CI environment: {is_ci}")
     
-    # User ID handling - different for CI vs dev
-    if is_ci:
-        # In CI, we can use fixed UIDs or environment variables
-        # Use USER_ID and GROUP_ID env vars if they exist, otherwise use defaults
-        uid = os.environ.get('USER_ID', '1000')
-        gid = os.environ.get('GROUP_ID', '1000')
-        logger.info(f"Using CI mode with UID={uid} and GID={gid}")
-    else:
-        # In development, always use the host's user ID
-        uid = str(os.getuid())
-        gid = str(os.getgid())
-        logger.info(f"Using development mode with host UID={uid} and GID={gid}")
+    uid = str(os.getuid())
+    gid = str(os.getgid())
+    logger.info(f"host UID={uid} and GID={gid}")
     
     # Prepare environment for Docker Compose
     compose_env = os.environ.copy()
@@ -139,31 +130,6 @@ def run_docker_compose(project_root, stop_event):
 
     # Use different docker-compose command based on environment
     if is_ci:
-        # In CI we want to use the self-contained version without bind mounts
-        cmd = [
-            "docker", "compose", 
-            "-f", "docker-compose.yml",
-            "-f", "docker-compose.ci.yml",
-            "config"  # First generate and check the merged configuration
-        ]
-        
-        # Run the config command to validate and debug issues
-        try:
-            config_process = subprocess.run(
-                cmd,
-                cwd=project_root,
-                check=True,
-                capture_output=True,
-                text=True,
-                env=compose_env
-            )
-            logger.info("Docker Compose configuration validated successfully")
-        except subprocess.CalledProcessError as e:
-            logger.error(f"Docker Compose configuration error: {e}")
-            logger.error(f"STDOUT: {e.stdout}")
-            logger.error(f"STDERR: {e.stderr}")
-            raise
-            
         # Now proceed with the actual up command
         cmd = [
             "docker", "compose", 

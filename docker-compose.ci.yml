@@ -1,22 +1,25 @@
-# CI-specific overrides for docker-compose.yml
-
-# This file contains overrides for docker-compose.yml that make services work properly in CI environments.
-# The main changes are:
-# 1. In CI, we do NOT use bind mounts - we copy code into the container during build
-
 services:
-  # Yellow Server service - CI-specific configuration
-  server:
-    volumes: []  # No volumes needed for CI
 
-  # Database service - CI-specific configuration
-  mariadb:
-    volumes: []  # No volumes needed for CI
-
-  # Yellow Client service - CI-specific configuration  
-  client:
-    volumes: []
-
-  # Message module - CI-specific configuration
-  messages:
-    volumes: []
+#  mariadb-init: null
+#
+#  common-init: null
+#
+#  server-init: null
+#
+#  server:
+#    volumes: null
+#
+#  mariadb:
+#    volumes: null
+#
+#  client:
+#    volumes: null
+#
+#  messages:
+#    volumes: null
+#
+#  admin:
+#    volumes: null
+#
+#
+#

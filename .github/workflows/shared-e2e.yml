@@ -115,19 +115,7 @@ jobs:
           find . -name "run_compose_and_test.py"
           exit 1
         fi
-        
-        # Get User and Group IDs using different variable names to avoid readonly variables
-        USER_ID=$(id -u)
-        GROUP_ID=$(id -g)
-        
-        cat > .env << EOF
-        CI=true
-        EOF
-        
-        # Display .env file for debugging
-        echo "Created .env file with contents:"
-        cat .env
-        
+
         # Check if docker-compose.ci.yml exists
         if [ ! -f "docker-compose.ci.yml" ]; then
           echo "Warning: docker-compose.ci.yml not found."
