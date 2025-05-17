@@ -179,7 +179,7 @@ jobs:
           if [ -f "$dir/Dockerfile" ]; then
             echo "✅ $dir/Dockerfile exists"
           else
-            echo "❌ $dir/Dockerfile is missing 
+            echo "❌ $dir/Dockerfile is missing" 
           fi
         done
         
