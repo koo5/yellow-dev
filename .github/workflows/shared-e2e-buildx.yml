@@ -1,4 +1,4 @@
-name: E2E Tests Without BuildX
+name: Shared E2E Tests
 
 # Make this workflow reusable
 on:
@@ -88,6 +88,32 @@ jobs:
         # Verify docker-compose script works
         docker-compose version
     
+    # Set up Docker buildx with layer caching capabilities
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+      id: buildx
+      with:
+        install: true
+        driver-opts: |
+          image=moby/buildkit:latest
+          network=host
+    
+    # Create cache directory for Docker layers
+    - name: Create buildx cache directory
+      run: |
+        sudo mkdir -p /tmp/.buildx-cache
+        sudo mkdir -p /tmp/.buildx-cache-new
+        sudo chmod -R 777 /tmp/.buildx-cache /tmp/.buildx-cache-new
+    
+    # Cache Docker layers using GitHub's cache
+    - name: Cache Docker layers
+      uses: actions/cache@v3
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-buildx-
+    
     - name: Print directory structure
       run: |
         find . -type d -maxdepth 3
@@ -103,7 +129,8 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y fish mariadb-client
     
-    - name: Run E2E Tests without buildx
+    # Set docker-compose to use buildx and cached layers
+    - name: Run E2E Tests with layer caching
       run: |
         ls -la
         cd yellow-dev
@@ -116,19 +143,23 @@ jobs:
           exit 1
         fi
         
+        # Ensure cache directories exist with proper permissions
+        sudo mkdir -p /tmp/.buildx-cache /tmp/.buildx-cache-new
+        sudo chmod -R 777 /tmp/.buildx-cache /tmp/.buildx-cache-new
+        
         # Get User and Group IDs using different variable names to avoid readonly variables
         USER_ID=$(id -u)
         GROUP_ID=$(id -g)
         
-        # Create .env file for docker-compose WITHOUT buildx settings
+        # Create .env file for docker-compose with BUILDX config
         cat > .env << EOF
-        # Disable BuildKit completely
-        DOCKER_BUILDKIT=0
-        COMPOSE_DOCKER_CLI_BUILD=0
-        # Set UID/GID for containers
+        COMPOSE_DOCKER_CLI_BUILD=1
+        DOCKER_BUILDKIT=1
+        BUILDKIT_PROGRESS=plain
+        DOCKER_BUILDKIT_CACHE=/tmp/.buildx-cache
+        COMPOSE_DOCKER_BUILD_ARGS="--cache-from=type=local,src=/tmp/.buildx-cache --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max"
         UID=$USER_ID
         GID=$GROUP_ID
-        # Set CI flag for containers
         CI=true
         IS_CI=1
         EOF
@@ -152,12 +183,35 @@ jobs:
           fi
         done
         
+        # Check which services use bind mounts in docker-compose.yml
+        echo "Checking for bind mounts in docker-compose.yml that need CI overrides..."
+        grep -A5 "volumes:" docker-compose.yml || echo "No volumes section found"
+        
+        # Generate diagnostic info for debugging
+        echo "=== Docker info ==="
+        docker info
+        
+        echo "=== Docker Compose version ==="
+        docker compose version
+        
+        echo "=== Docker BuildX version ==="
+        docker buildx version
+        
         # Run docker compose config to validate configuration
         docker compose -f docker-compose.yml -f docker-compose.ci.yml config > docker-compose.merged.yml
         echo "Generated merged Docker Compose configuration in docker-compose.merged.yml"
         
-        # Run the tests with explicit docker compose syntax WITHOUT buildx
-        DOCKER_BUILDKIT=0 \
-        COMPOSE_DOCKER_CLI_BUILD=0 \
+        # Run the tests with explicit docker compose syntax and BUILDX enabled
+        DOCKER_BUILDX_CONTEXT=default \
+        DOCKER_BUILDKIT=1 \
+        BUILDKIT_PROGRESS=plain \
         CI=true IS_CI=1 USER_ID=$USER_ID GROUP_ID=$GROUP_ID \
-        python scripts/run_compose_and_test.py
+        COMPOSE_BAKE=true python scripts/run_compose_and_test.py
+        
+        # Move cache for next run
+        if [ -d "/tmp/.buildx-cache-new" ]; then
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+        else
+          echo "Warning: /tmp/.buildx-cache-new directory not found after build"
+        fi
