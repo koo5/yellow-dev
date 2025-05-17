@@ -20,6 +20,11 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    - name: Print working directory
+      run: |
+        pwd
+        ls -la
+
     # Conditionally checkout the client repo if specified
     - name: Checkout custom client code
       if: inputs.client_repo != ''
@@ -32,6 +37,8 @@ jobs:
     - name: Checkout yellow-dev
       uses: actions/checkout@v3
       with:
+        repository: koo5/yellow-dev
+        ref: master
         path: yellow-dev
         submodules: recursive
     
@@ -76,6 +83,10 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-buildx-
     
+    - name: Print directory structure
+      run: |
+        find . -type d -maxdepth 3
+    
     - name: Install playwright
       run: |
         cd yellow-dev/yellow-client
@@ -90,7 +101,16 @@ jobs:
     # Set docker-compose to use buildx and cached layers
     - name: Run E2E Tests with layer caching
       run: |
+        ls -la
         cd yellow-dev
+        ls -la
+        
+        # Verify script exists
+        if [ ! -f "scripts/run_compose_and_test.py" ]; then
+          echo "ERROR: Test script not found at expected location scripts/run_compose_and_test.py"
+          find . -name "run_compose_and_test.py"
+          exit 1
+        fi
         
         # Get UID and GID (same as in run_compose_and_test.py)
         UID=$(id -u)
