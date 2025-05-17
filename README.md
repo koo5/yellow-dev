@@ -11,7 +11,7 @@ cd yellow-server-common; bun i --frozen-lockfile; cd ..
 ```
 2)
 ```
-docker-compose down; docker-compose up --build --remove-orphans
+docker compose down; docker compose up --build --remove-orphans
 ```
 (mariadb starts)
 3)

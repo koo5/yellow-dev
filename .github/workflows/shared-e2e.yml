@@ -64,6 +64,30 @@ jobs:
       with:
         bun-version: latest
     
+    # Install Docker Compose v2
+    - name: Install Docker Compose
+      run: |
+        # Docker Compose V2 is part of Docker CLI
+        docker compose version || {
+          echo "Docker Compose not found, installing..."
+          # Ensure Docker CLI is installed and has compose plugin
+          sudo apt-get update
+          sudo apt-get install -y docker-compose-plugin
+        }
+        
+        # Verify installation
+        docker compose version
+        
+        # Create executable 'docker-compose' script in PATH for backward compatibility
+        sudo tee /usr/local/bin/docker-compose > /dev/null << 'EOF'
+        #!/bin/bash
+        docker compose "$@"
+        EOF
+        sudo chmod +x /usr/local/bin/docker-compose
+        
+        # Verify docker-compose script works
+        docker-compose version
+    
     # Set up Docker buildx with layer caching capabilities
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
@@ -73,6 +97,13 @@ jobs:
         driver-opts: |
           image=moby/buildkit:latest
           network=host
+    
+    # Create cache directory for Docker layers
+    - name: Create buildx cache directory
+      run: |
+        sudo mkdir -p /tmp/.buildx-cache
+        sudo mkdir -p /tmp/.buildx-cache-new
+        sudo chmod -R 777 /tmp/.buildx-cache /tmp/.buildx-cache-new
     
     # Cache Docker layers using GitHub's cache
     - name: Cache Docker layers
@@ -112,18 +143,30 @@ jobs:
           exit 1
         fi
         
+        # Ensure cache directories exist with proper permissions
+        sudo mkdir -p /tmp/.buildx-cache /tmp/.buildx-cache-new
+        sudo chmod -R 777 /tmp/.buildx-cache /tmp/.buildx-cache-new
+        
         # Get User and Group IDs using different variable names to avoid readonly variables
         USER_ID=$(id -u)
         GROUP_ID=$(id -g)
         
-        # Create .env file for docker-compose
-        echo "COMPOSE_DOCKER_CLI_BUILD=1" > .env
-        echo "DOCKER_BUILDKIT=1" >> .env
-        echo "BUILDKIT_PROGRESS=plain" >> .env
-        echo "UID=$USER_ID" >> .env
-        echo "GID=$GROUP_ID" >> .env
-        echo "CI=true" >> .env
-        echo "IS_CI=1" >> .env
+        # Create .env file for docker-compose with BUILDX config
+        cat > .env << EOF
+        COMPOSE_DOCKER_CLI_BUILD=1
+        DOCKER_BUILDKIT=1
+        BUILDKIT_PROGRESS=plain
+        DOCKER_BUILDKIT_CACHE=/tmp/.buildx-cache
+        COMPOSE_DOCKER_BUILD_ARGS="--cache-from=type=local,src=/tmp/.buildx-cache --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max"
+        UID=$USER_ID
+        GID=$GROUP_ID
+        CI=true
+        IS_CI=1
+        EOF
+        
+        # Display .env file for debugging
+        echo "Created .env file with contents:"
+        cat .env
         
         # Check if docker-compose.ci.yml exists
         if [ ! -f "docker-compose.ci.yml" ]; then
@@ -134,42 +177,17 @@ jobs:
         echo "Checking for bind mounts in docker-compose.yml that need CI overrides..."
         grep -A5 "volumes:" docker-compose.yml || echo "No volumes section found"
         
-        # Add cache export configuration to docker-compose build commands
-        # This is a workaround since docker-compose doesn't directly support BuildKit cache config
-        # We'll intercept the regular docker-compose up command in the Python script
+        # Run the tests with explicit docker compose syntax and BUILDX enabled
+        DOCKER_BUILDX_CONTEXT=default \
+        DOCKER_BUILDKIT=1 \
+        BUILDKIT_PROGRESS=plain \
+        CI=true IS_CI=1 USER_ID=$USER_ID GROUP_ID=$GROUP_ID \
+        python scripts/run_compose_and_test.py
         
-        # First, let's build the images with layer caching
-        for service in $(docker-compose config --services); do
-          echo "Building service $service with cached layers"
-          
-          # Get the image name from docker-compose
-          image_name=$(docker-compose config | grep "image:" | grep -v "image: *\${" | awk '{print $2}' | grep -v "^$" | sort -u | head -1 || echo "")
-          
-          # If no image name found, use service name
-          if [ -z "$image_name" ]; then
-            image_name="yellow-dev-$service"
-          fi
-          
-          # Get the build context
-          context=$(docker-compose config | grep -A10 "services:" | grep -A10 "$service:" | grep "context:" | awk '{print $2}' || echo ".")
-          
-          # Build with cached layers
-          docker buildx build \
-            --builder=${{ steps.buildx.outputs.name }} \
-            --tag $image_name \
-            --build-arg UID=$USER_ID \
-            --build-arg GID=$GROUP_ID \
-            --build-arg IS_CI=1 \
-            --cache-from type=local,src=/tmp/.buildx-cache \
-            --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
-            --load \
-            $context || echo "Failed to build $service with cache, will let docker-compose build it"
-        done
-        
-        # Move the new cache
-        rm -rf /tmp/.buildx-cache
-        mv /tmp/.buildx-cache-new /tmp/.buildx-cache || true
-        
-        # Now run the tests (docker-compose will skip building images that were already built)
-        # Use environment variables to explicitly indicate this is CI
-        CI=true IS_CI=1 USER_ID=$USER_ID GROUP_ID=$GROUP_ID python scripts/run_compose_and_test.py
+        # Move cache for next run
+        if [ -d "/tmp/.buildx-cache-new" ]; then
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+        else
+          echo "Warning: /tmp/.buildx-cache-new directory not found after build"
+        fi
