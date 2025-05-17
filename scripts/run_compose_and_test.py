@@ -20,7 +20,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def run_command(cmd, cwd=None, capture_output=True):
+def run_command(cmd, cwd=None, capture_output=True, env=None):
     logger.info(f"Running command: {' '.join(cmd)}")
     
     if capture_output:
@@ -29,7 +29,8 @@ def run_command(cmd, cwd=None, capture_output=True):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
-            cwd=cwd
+            cwd=cwd,
+            env=env
         )
         
         while True:
@@ -41,7 +42,7 @@ def run_command(cmd, cwd=None, capture_output=True):
     else:
         # Run without capturing output - this will stream output directly to console
         logger.info(f"Running command with direct output: {' '.join(cmd)}")
-        process = subprocess.run(cmd, cwd=cwd, check=False)
+        process = subprocess.run(cmd, cwd=cwd, check=False, env=env)
     
     return_code = process.returncode if not capture_output else process.poll()
     logger.info(f"Command finished with exit code: {return_code}")
@@ -64,7 +65,7 @@ def wait_for_service(url, max_attempts=300, delay=2):
             logger.warning(f"Unexpected error connecting to {url} on attempt {attempts + 1}: {e}")
             
         attempts += 1
-        logger.info(f"Attempt {attempts}/{max_attempts} - Service not available yet, waiting {delay} seconds...")
+        logger.info(f"Attempt {attempts}/{max_attempts} - Service not available yet, retry in {delay} seconds...")
         time.sleep(delay)
     
     logger.error(f"Service at {url} did not become available after {max_attempts} attempts.")
@@ -113,20 +114,45 @@ def run_docker_compose(project_root, stop_event):
     logger.info("Starting Docker Compose...")
     logger.debug(f"Project root for Docker Compose: {project_root}")
     
-    # Get UID and GID - try from env vars first (for GitHub Actions), fall back to id command
-    # Use USER_ID and GROUP_ID env vars if they exist, otherwise use id commands
-    uid = os.environ.get('USER_ID', str(os.getuid()))
-    gid = os.environ.get('GROUP_ID', str(os.getgid()))
+    # Detect if we're running in CI
+    is_ci = os.environ.get('CI', 'false').lower() == 'true'
+    logger.info(f"Running in CI environment: {is_ci}")
     
-    logger.info(f"Setting UID={uid} and GID={gid} for Docker Compose.")
+    # User ID handling - different for CI vs dev
+    if is_ci:
+        # In CI, we can use fixed UIDs or environment variables
+        # Use USER_ID and GROUP_ID env vars if they exist, otherwise use defaults
+        uid = os.environ.get('USER_ID', '1000')
+        gid = os.environ.get('GROUP_ID', '1000')
+        logger.info(f"Using CI mode with UID={uid} and GID={gid}")
+    else:
+        # In development, always use the host's user ID
+        uid = str(os.getuid())
+        gid = str(os.getgid())
+        logger.info(f"Using development mode with host UID={uid} and GID={gid}")
     
     # Prepare environment for Docker Compose
     compose_env = os.environ.copy()
     compose_env["UID"] = uid
     compose_env["GID"] = gid
-    compose_env["CI"] = "true"
+    compose_env["CI"] = "true" if is_ci else "false"
+    compose_env["IS_CI"] = "1" if is_ci else "0"
+    compose_env["COMPOSE_DOCKER_CLI_BUILD"] = "1"
+    compose_env["DOCKER_BUILDKIT"] = "1"
     
-    cmd = ["docker", "compose", "up", "--build", "--remove-orphans"]
+    # Use different docker-compose command based on environment
+    if is_ci:
+        # In CI we want to use the self-contained version without bind mounts
+        cmd = [
+            "docker", "compose", 
+            "-f", "docker-compose.yml",
+            "-f", "docker-compose.ci.yml",
+            "up", "--build", "--remove-orphans"
+        ]
+    else:
+        # In development use the standard docker-compose file
+        cmd = ["docker", "compose", "up", "--build", "--remove-orphans"]
+    
     logger.info(f"Running Docker Compose command: {shlex.join(cmd)} with UID={uid} GID={gid}")
     
     process = subprocess.Popen(
@@ -172,13 +198,15 @@ def run_docker_compose(project_root, stop_event):
 
 
 def main():
-
     logger.info("Starting test execution script.")
     # Get the root directory of the project
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
-    project_root = os.path.dirname(script_dir)
     logger.info(f"Project root directory: {project_root}")
+    
+    # Detect if we're running in CI
+    is_ci = os.environ.get('CI', 'false').lower() == 'true'
+    logger.info(f"Running in CI environment: {is_ci}")
     
     # Initialize state variables
     test_status = 1  # Default to failure
@@ -192,6 +220,24 @@ def main():
     try:
         logger.info("Creating stop event for Docker Compose thread.")
         stop_event = threading.Event()
+        
+        # Check if docker-compose.ci.yml exists when in CI mode
+        if is_ci and not os.path.exists(os.path.join(project_root, "docker-compose.ci.yml")):
+            logger.warning("CI mode active but docker-compose.ci.yml not found. Creating a default CI override.")
+            # Create a minimal docker-compose.ci.yml if it doesn't exist
+            with open(os.path.join(project_root, "docker-compose.ci.yml"), "w") as f:
+                f.write("""# CI-specific overrides for docker-compose.yml
+version: '3.8'
+# This file contains CI-specific overrides for docker-compose.yml
+# It removes bind mounts and makes containers self-contained
+services:
+  # Override service configs as needed for CI
+  # Example:
+  # web:
+  #   volumes:
+  #     # Remove bind mounts, let docker copy files during build
+  #     - /build
+""")
         
         test_phase = "docker_startup"
         logger.info(f"Entering phase: {test_phase}")
@@ -226,7 +272,14 @@ def main():
         logger.info(f"Entering phase: {test_phase}")
         logger.info("========== SETTING UP DATABASE ==========")
         db_setup_command = ["fish", "./scripts/ci_db.sh"]
-        db_setup_result = run_command(db_setup_command, cwd=project_root)
+        
+        # Pass CI environment variable to database setup script
+        db_setup_env = os.environ.copy()
+        db_setup_env["CI"] = "true" if is_ci else "false"
+        db_setup_env["IS_CI"] = "1" if is_ci else "0"
+        
+        # Run db setup with CI env vars
+        db_setup_result = run_command(db_setup_command, cwd=project_root, env=db_setup_env)
         
         if db_setup_result != 0:
             failure_reason = f"Database setup failed with exit code: {db_setup_result} for command: {' '.join(db_setup_command)}"
@@ -243,16 +296,22 @@ def main():
         
         logger.info("========== RUNNING PLAYWRIGHT TESTS ==========")
         playwright_test_command = [
-            "bun", "x", "playwright", "test", "--reporter=line,github"
+            "npx", "playwright", "test", "--reporter=line,github"
         ]
         logger.info(f"Executing Playwright tests with command: {' '.join(playwright_test_command)}")
+        
+        # Pass CI flag to the test environment
+        playwright_env = os.environ.copy()
+        playwright_env["CI"] = "true" if is_ci else "false" 
+        playwright_env["IS_CI"] = "1" if is_ci else "0"
         
         process = subprocess.Popen(
             playwright_test_command,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
-            cwd=client_dir
+            cwd=client_dir,
+            env=playwright_env
         )
         
         logger.info("--- Playwright Test Output START ---")
@@ -291,7 +350,18 @@ def main():
                 logger.info("Docker Compose thread stopped.")
         
         logger.info("Ensuring Docker Compose is down...")
-        run_command(["docker", "compose", "down", "--remove-orphans"], cwd=project_root, capture_output=True) # Capture output for this too
+        # Use the same CI-specific docker-compose command for shutdown
+        if is_ci:
+            down_command = [
+                "docker", "compose", 
+                "-f", "docker-compose.yml",
+                "-f", "docker-compose.ci.yml",
+                "down", "--remove-orphans"
+            ]
+        else:
+            down_command = ["docker", "compose", "down", "--remove-orphans"]
+            
+        run_command(down_command, cwd=project_root, capture_output=True) # Capture output for this too
         logger.info("Docker Compose down command executed.")
         
         logger.info("========== PLAYWRIGHT TEST OUTPUT REPLAY ==========")

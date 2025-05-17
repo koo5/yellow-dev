@@ -123,6 +123,16 @@ jobs:
         echo "UID=$USER_ID" >> .env
         echo "GID=$GROUP_ID" >> .env
         echo "CI=true" >> .env
+        echo "IS_CI=1" >> .env
+        
+        # Check if docker-compose.ci.yml exists
+        if [ ! -f "docker-compose.ci.yml" ]; then
+          echo "Warning: docker-compose.ci.yml not found. The script will create a default one."
+        fi
+        
+        # Check which services use bind mounts in docker-compose.yml
+        echo "Checking for bind mounts in docker-compose.yml that need CI overrides..."
+        grep -A5 "volumes:" docker-compose.yml || echo "No volumes section found"
         
         # Add cache export configuration to docker-compose build commands
         # This is a workaround since docker-compose doesn't directly support BuildKit cache config
@@ -149,6 +159,7 @@ jobs:
             --tag $image_name \
             --build-arg UID=$USER_ID \
             --build-arg GID=$GROUP_ID \
+            --build-arg IS_CI=1 \
             --cache-from type=local,src=/tmp/.buildx-cache \
             --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
             --load \
@@ -160,5 +171,5 @@ jobs:
         mv /tmp/.buildx-cache-new /tmp/.buildx-cache || true
         
         # Now run the tests (docker-compose will skip building images that were already built)
-        # Use environment variables to pass USER_ID and GROUP_ID to the Python script
-        USER_ID=$USER_ID GROUP_ID=$GROUP_ID python scripts/run_compose_and_test.py
+        # Use environment variables to explicitly indicate this is CI
+        CI=true IS_CI=1 USER_ID=$USER_ID GROUP_ID=$GROUP_ID python scripts/run_compose_and_test.py
