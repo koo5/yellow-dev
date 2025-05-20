@@ -4,10 +4,13 @@ services:
   mariadb-init:
     image: alpine
     container_name: mariadb-init
+    networks:
+      - stack-network
     volumes:
       - mariadb_tmp:/mariadb_tmp
     command: ["sh", "-c", "mkdir -p /mariadb_tmp && chmod 1777 /mariadb_tmp"]
     entrypoint: []
+
 
   mariadb:
     image: mariadb:10.5
@@ -24,7 +27,8 @@ services:
     deploy:
       restart_policy:
         condition: any
-    network_mode: "host"
+    networks:
+      - stack-network
     healthcheck:
       #test: "/bin/true" mysql  2>&1 | grep connect something ??
       test: "mariadb --protocol=tcp --host=localhost --user=workaround --password=whyistherenoping --force 2>&1 | grep -v \"Can't connect to server\""
@@ -35,7 +39,8 @@ services:
 
 
   common-init:
-    network_mode: "host"
+    networks:
+      - stack-network
     build:
       context: ./yellow-server-common/
       args:
@@ -49,6 +54,8 @@ services:
 
   server-init:
     image: alpine
+    networks:
+      - stack-network
     volumes:
       - server_tmp:/tmp
     command: ["sh", "-c", "mkdir -p /tmp && chmod 1777 /tmp"]
@@ -56,7 +63,8 @@ services:
 
 
   server:
-    network_mode: "host"
+    networks:
+      - stack-network
     build:
       context: ./yellow-server/
       args:
@@ -71,6 +79,8 @@ services:
     environment:
       - VITE_YELLOW_SETTINGS_PATH=/app/settings.json
       - CI=${CI:-}
+      - MARIA_HOST=${MARIA_HOST:-mariadb}
+      - MESSAGES_HOST=${MESSAGES_HOST:-messages}
     depends_on:
       common-init: {condition: service_completed_successfully}
       server-init: {condition: service_completed_successfully}
@@ -79,6 +89,8 @@ services:
     deploy:
       restart_policy:
         condition: any
+    ports:
+      - "8085:8085"
     healthcheck:
       test: "curl -v --fail http://localhost:8085/health"
       start_interval: 1s #Docker Engine version 25.0 or later
@@ -88,7 +100,8 @@ services:
 
 
   messages:
-    network_mode: "host"
+    networks:
+      - stack-network
     build:
       context: ./yellow-server-module-messages/
       args:
@@ -102,12 +115,16 @@ services:
     environment:
       - VITE_YELLOW_SETTINGS_PATH=/app/settings.json
       - CI=${CI:-}
+      - MARIA_HOST=${MARIA_HOST:-mariadb}
+      - MESSAGES_HOST=${MESSAGES_HOST:-messages}
     depends_on:
       common-init: {condition: service_completed_successfully}
       mariadb: {condition: service_healthy}
     deploy:
       restart_policy:
         condition: any
+    ports:
+      - "25001:25001"
     healthcheck:
       test: "curl -v --fail http://localhost:25001/health"
       start_interval: 1s
@@ -174,7 +191,8 @@ services:
 
 
   admin:
-    network_mode: "host"
+    networks:
+      - stack-network
     build:
       context: ./yellow-admin/
       args:
@@ -198,7 +216,8 @@ services:
 
 
   client:
-    network_mode: "host"
+    networks:
+      - stack-network
     build:
       context: ./yellow-client/
       args:
@@ -250,4 +269,8 @@ volumes:
   server_logs:
   server_tmp:
 #  elasticsearch:
+
+networks:
+  stack-network:
+    driver: bridge
 

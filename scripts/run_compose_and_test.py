@@ -8,6 +8,10 @@ from urllib.error import URLError
 import os
 import threading
 import logging
+import yaml
+import json
+import shutil
+from pathlib import Path
 
 # Configure logging
 logging.basicConfig(
@@ -110,13 +114,14 @@ def wait_for_container_healthy(container_name, max_attempts=60, delay=5):
     logger.error(f"Container '{container_name}' did not become healthy after {max_attempts} attempts.")
     return False
 
-def run_docker_compose(project_root, stop_event):
+def run_docker_compose(project_root, stop_event, host_network=False):
     logger.info("Starting Docker Compose...")
     logger.debug(f"Project root for Docker Compose: {project_root}")
     
     # Detect if we're running in CI
     is_ci = os.environ.get('CI', 'false').lower() == 'true'
     logger.info(f"Running in CI environment: {is_ci}")
+    logger.info(f"Using host network: {host_network}")
     
     uid = str(os.getuid())
     gid = str(os.getgid())
@@ -127,19 +132,100 @@ def run_docker_compose(project_root, stop_event):
     compose_env["UID"] = uid
     compose_env["GID"] = gid
     compose_env["CI"] = "true" if is_ci else "false"
+    
+    # Set environment variables based on network mode
+    compose_env["MARIA_HOST"] = "127.0.0.1" if host_network else "mariadb"
+    compose_env["MESSAGES_HOST"] = "localhost" if host_network else "messages"
+    logger.info(f"Setting MARIA_HOST={compose_env['MARIA_HOST']}")
+    logger.info(f"Setting MESSAGES_HOST={compose_env['MESSAGES_HOST']}")
 
-    # Use different docker-compose command based on environment
-    if is_ci:
-        # Now proceed with the actual up command
-        cmd = [
-            "docker", "compose", 
-            "-f", "docker-compose.yml",
-            "-f", "docker-compose.ci.yml",
-            "up", "--build", "--remove-orphans"
-        ]
+    # Create the generated_compose_files directory if it doesn't exist
+    generated_compose_dir = os.path.join(project_root, "generated_compose_files")
+    Path(generated_compose_dir).mkdir(parents=True, exist_ok=True)
+    
+    # If using host network, we need to modify the compose file and settings
+    if host_network:
+        logger.info("Creating modified settings files for host network mode")
+        
+        # Create server settings with localhost settings
+        server_settings_path = os.path.join(project_root, "yellow-server-settings.json")
+        with open(server_settings_path, 'r') as f:
+            server_settings = json.load(f)
+        
+        # Ensure database host is set to 127.0.0.1
+        server_settings['database']['host'] = "127.0.0.1"
+        
+        # Write modified settings file
+        server_settings_modified_path = os.path.join(generated_compose_dir, "yellow-server-settings.json")
+        with open(server_settings_modified_path, 'w') as f:
+            json.dump(server_settings, f, indent=1)
+        
+        # Create messages module settings
+        messages_settings_path = os.path.join(project_root, "yellow-server-module-messages-settings.json")
+        with open(messages_settings_path, 'r') as f:
+            messages_settings = json.load(f)
+        
+        # Ensure database host is set to 127.0.0.1
+        messages_settings['database']['host'] = "127.0.0.1"
+        
+        # Write modified settings file
+        messages_settings_modified_path = os.path.join(generated_compose_dir, "yellow-server-module-messages-settings.json")
+        with open(messages_settings_modified_path, 'w') as f:
+            json.dump(messages_settings, f, indent=1)
+        
+        # Create modified compose file with host network
+        logger.info("Creating modified compose file with host network mode")
+        compose_file = os.path.join(generated_compose_dir, "docker-compose-host-network.yml")
+        
+        # Load and modify the docker-compose.yml file
+        with open(os.path.join(project_root, "docker-compose.yml"), 'r') as f:
+            compose_data = yaml.safe_load(f)
+        
+        # Remove any network definitions
+        if 'networks' in compose_data:
+            del compose_data['networks']
+        
+        # Set network_mode to host for all services
+        for service_name, service_config in compose_data.get('services', {}).items():
+            service_config['network_mode'] = 'host'
+            if 'networks' in service_config:
+                del service_config['networks']
+        
+        # Update the settings file paths in the volumes
+        for service_name in ['server', 'messages']:
+            if service_name in compose_data.get('services', {}):
+                volumes = compose_data['services'][service_name].get('volumes', [])
+                for i, volume in enumerate(volumes):
+                    if 'yellow-server-settings.json' in volume:
+                        volumes[i] = f"{server_settings_modified_path}:/app/settings.json"
+                    elif 'yellow-server-module-messages-settings.json' in volume:
+                        volumes[i] = f"{messages_settings_modified_path}:/app/settings.json"
+        
+        # Write the modified compose file
+        with open(compose_file, 'w') as f:
+            yaml.dump(compose_data, f, default_flow_style=False)
+        
+        # Use the modified compose file
+        if is_ci:
+            cmd = [
+                "docker", "compose", 
+                "-f", compose_file,
+                "-f", "docker-compose.ci.yml",
+                "up", "--build", "--remove-orphans"
+            ]
+        else:
+            cmd = ["docker", "compose", "-f", compose_file, "up", "--build", "--remove-orphans"]
     else:
-        # In development use the standard docker-compose file
-        cmd = ["docker", "compose", "up", "--build", "--remove-orphans"]
+        # Use the standard compose file with normal networking
+        if is_ci:
+            cmd = [
+                "docker", "compose", 
+                "-f", "docker-compose.yml",
+                "-f", "docker-compose.ci.yml",
+                "up", "--build", "--remove-orphans"
+            ]
+        else:
+            cmd = ["docker", "compose", "up", "--build", "--remove-orphans"]
     
     logger.info(f"Running Docker Compose command: {shlex.join(cmd)} with UID={uid} GID={gid}")
     
@@ -185,7 +271,7 @@ def run_docker_compose(project_root, stop_event):
         logger.info(f"Docker Compose process already exited with code {process.poll()}.")
 
 
-def main():
+def main(host_network=False):
     logger.info("Starting test execution script.")
     # Get the root directory of the project
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -195,6 +281,7 @@ def main():
     # Detect if we're running in CI
     is_ci = os.environ.get('CI', 'false').lower() == 'true'
     logger.info(f"Running in CI environment: {is_ci}")
+    logger.info(f"Using host network mode: {host_network}")
     
     # Initialize state variables
     test_status = 1  # Default to failure
@@ -213,7 +300,7 @@ def main():
         logger.info(f"Entering phase: {test_phase}")
         docker_thread = threading.Thread(
             target=run_docker_compose,
-            args=(project_root, stop_event)
+            args=(project_root, stop_event, host_network)
         )
         docker_thread.start()
         logger.info("Docker Compose thread started.")
@@ -319,15 +406,28 @@ def main():
         
         logger.info("Ensuring Docker Compose is down...")
         # Use the same CI-specific docker-compose command for shutdown
+        generated_compose_dir = os.path.join(project_root, "generated_compose_files")
+        compose_file = "docker-compose.yml"
+        
+        if host_network:
+            # Use the host network compose file if it exists
+            host_network_file = os.path.join(generated_compose_dir, "docker-compose-host-network.yml")
+            if os.path.exists(host_network_file):
+                compose_file = host_network_file
+                logger.info(f"Using host network compose file for shutdown: {compose_file}")
+        
         if is_ci:
             down_command = [
                 "docker", "compose", 
-                "-f", "docker-compose.yml",
+                "-f", compose_file,
                 "-f", "docker-compose.ci.yml",
                 "down", "--remove-orphans"
             ]
         else:
-            down_command = ["docker", "compose", "down", "--remove-orphans"]
+            if host_network and os.path.exists(os.path.join(generated_compose_dir, "docker-compose-host-network.yml")):
+                down_command = ["docker", "compose", "-f", compose_file, "down", "--remove-orphans"]
+            else:
+                down_command = ["docker", "compose", "down", "--remove-orphans"]
             
         run_command(down_command, cwd=project_root, capture_output=True) # Capture output for this too
         logger.info("Docker Compose down command executed.")
@@ -372,4 +472,12 @@ def main():
 
 if __name__ == "__main__":
     # Basic configuration is now at the top level of the script
-    main()
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='Run Docker Compose and tests')
+    parser.add_argument('--host-network', dest='host_network', action='store_true',
+                        help='Use host network mode')
+    parser.set_defaults(host_network=False)
+    
+    args = parser.parse_args()
+    main(host_network=args.host_network)
