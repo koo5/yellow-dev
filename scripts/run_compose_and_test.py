@@ -210,7 +210,6 @@ def run_docker_compose(project_root, stop_event, host_network=False):
             cmd = [
                 "docker", "compose", 
                 "-f", compose_file,
-                "-f", "docker-compose.ci.yml",
                 "up", "--build", "--remove-orphans"
             ]
         else:
@@ -221,7 +220,6 @@ def run_docker_compose(project_root, stop_event, host_network=False):
             cmd = [
                 "docker", "compose", 
                 "-f", "docker-compose.yml",
-                "-f", "docker-compose.ci.yml",
                 "up", "--build", "--remove-orphans"
             ]
         else:
@@ -420,7 +418,6 @@ def main(host_network=False):
             down_command = [
                 "docker", "compose", 
                 "-f", compose_file,
-                "-f", "docker-compose.ci.yml",
                 "down", "--remove-orphans"
             ]
         else:

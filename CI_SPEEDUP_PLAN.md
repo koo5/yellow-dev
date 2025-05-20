@@ -25,7 +25,6 @@
    - Parse the YAML file using Python's PyYAML
    - Walk through all services and remove their volume sections
    - Output a modified docker-compose file for CI use
-   - This replaces the current commented-out `docker-compose.ci.yml`
 
 2. Update the CI workflow to use the modified docker-compose configuration:
    - Generate the modified configuration at CI runtime

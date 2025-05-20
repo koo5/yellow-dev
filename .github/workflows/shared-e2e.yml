@@ -115,11 +115,6 @@ jobs:
           exit 1
         fi
 
-        # Check if docker-compose.ci.yml exists
-        if [ ! -f "docker-compose.ci.yml" ]; then
-          echo "Warning: docker-compose.ci.yml not found."
-        fi
-        
         # Check for Dockerfiles in service contexts
         echo "Checking for Dockerfiles in service contexts..."
         for dir in yellow-server-common yellow-server yellow-client yellow-admin yellow-server-module-messages; do
