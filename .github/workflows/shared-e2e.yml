@@ -46,8 +46,8 @@ jobs:
     - name: Replace yellow-client code with custom source
       if: inputs.client_repo != ''
       run: |
-        rm -rf yellow-dev/yellow-client
-        cp -r source-client yellow-dev/yellow-client
+        rm -rf yellow-dev/yellow-client && echo "Removed old yellow-client code"
+        cp -r source-client yellow-dev/yellow-client && echo "Replaced yellow-client code with custom source"
     
     - name: Set up Python
       uses: actions/setup-python@v4

@@ -117,6 +117,7 @@ services:
 
 
 
+
 #  messages2:
 #    network_mode: "host"
 #    build:
@@ -192,6 +193,8 @@ services:
       interval: 30s
       timeout: 20s
       retries: 30
+    ports:
+      - "4000:4000"
 
 
   client:
@@ -209,6 +212,8 @@ services:
       - VITE_YELLOW_CLIENT_DEFAULT_ACCOUNTS=${VITE_YELLOW_CLIENT_DEFAULT_ACCOUNTS:-}
       - VITE_YELLOW_CLIENT_DEBUG=true
       - COMMAND="${CLIENT_COMMAND:-./start-docker-dev.sh}"
+    ports:
+      - "3000:3000"
 
     #depends_on: {server: {condition: service_healthy}}
     deploy:
@@ -245,5 +250,4 @@ volumes:
   server_logs:
   server_tmp:
 #  elasticsearch:
-
 
