@@ -11,6 +11,7 @@ import logging
 import yaml
 import json
 import shutil
+import copy
 from pathlib import Path
 
 # Configure logging
@@ -114,7 +115,94 @@ def wait_for_container_healthy(container_name, max_attempts=60, delay=5):
     logger.error(f"Container '{container_name}' did not become healthy after {max_attempts} attempts.")
     return False
 
-def run_docker_compose(project_root, stop_event, host_network=False):
+def generate_full_mode_compose_file(project_root, compose_data):
+    """
+    Modify the docker-compose file for full mode.
+    In full mode, we remove volume bind mounts and handle package installation inside Dockerfile.
+    We also update Dockerfile paths to use Dockerfile_full.
+    """
+    logger.info("Generating full mode compose file...")
+    
+    # Make a deep copy to avoid modifying the original data
+    full_mode_compose = copy.deepcopy(compose_data)
+    
+    # For each service, modify as needed for full mode
+    for service_name, service_config in full_mode_compose.get('services', {}).items():
+        # Skip services that don't need modification
+        if service_name in ['mariadb', 'mariadb-init']:
+            continue
+            
+        # Remove volume bind mounts that are for app sources
+        if 'volumes' in service_config:
+            # Keep only non-app-source volumes (like logs, database, etc.)
+            volumes_to_keep = []
+            for volume in service_config['volumes']:
+                # Check if it's an app source bind mount
+                # App source bind mounts typically contain project root path
+                if not (isinstance(volume, str) and './yellow-' in volume):
+                    volumes_to_keep.append(volume)
+                else:
+                    logger.debug(f"Removing bind mount {volume} from service {service_name} for full mode")
+            
+            # Replace volumes with filtered list
+            service_config['volumes'] = volumes_to_keep
+        
+        # Update build configuration to use Dockerfile_full if available
+        if 'build' in service_config:
+            # If it's a dictionary with context and dockerfile
+            if isinstance(service_config['build'], dict):
+                build_config = service_config['build']
+                context = build_config.get('context', '.')
+                
+                # Check if Dockerfile_full exists in the context
+                dockerfile_full_path = os.path.join(project_root, context, 'Dockerfile_full')
+                if os.path.exists(dockerfile_full_path):
+                    logger.info(f"Using Dockerfile_full for service {service_name}")
+                    build_config['dockerfile'] = 'Dockerfile_full'
+                    
+                    # Add a stage name for the base image if not already specified
+                    if 'target' not in build_config:
+                        # Set the target to be the service name with a 'full' suffix
+                        build_config['target'] = f"{service_name}_full"
+                    
+                    # Add args for hollow mode
+                    if 'args' not in build_config:
+                        build_config['args'] = {}
+                    build_config['args']['HOLLOW'] = 'false'
+                    
+                    # Add dependency on base image
+                    base_service_name = f"{service_name}-base"
+                    if 'depends_on' not in service_config:
+                        service_config['depends_on'] = {}
+                    
+                    service_config['depends_on'][base_service_name] = {'condition': 'service_completed_successfully'}
+            
+            # If it's just a string (context path)
+            elif isinstance(service_config['build'], str):
+                context = service_config['build']
+                dockerfile_full_path = os.path.join(project_root, context, 'Dockerfile_full')
+                
+                if os.path.exists(dockerfile_full_path):
+                    logger.info(f"Using Dockerfile_full for service {service_name}")
+                    # Convert to use full mode with base image
+                    service_config['build'] = {
+                        'context': context,
+                        'dockerfile': 'Dockerfile_full',
+                        'args': {
+                            'HOLLOW': 'false'
+                        }
+                    }
+                    
+                    # Add dependency on base image
+                    base_service_name = f"{service_name}-base"
+                    if 'depends_on' not in service_config:
+                        service_config['depends_on'] = {}
+                    
+                    service_config['depends_on'][base_service_name] = {'condition': 'service_completed_successfully'}
+    
+    return full_mode_compose
+
+def run_docker_compose(project_root, stop_event, host_network=False, hollow=False):
     logger.info("Starting Docker Compose...")
     logger.debug(f"Project root for Docker Compose: {project_root}")
     
@@ -122,6 +210,7 @@ def run_docker_compose(project_root, stop_event, host_network=False):
     is_ci = os.environ.get('CI', 'false').lower() == 'true'
     logger.info(f"Running in CI environment: {is_ci}")
     logger.info(f"Using host network: {host_network}")
+    logger.info(f"Using hollow mode: {hollow}")
     
     uid = str(os.getuid())
     gid = str(os.getgid())
@@ -132,16 +221,26 @@ def run_docker_compose(project_root, stop_event, host_network=False):
     compose_env["UID"] = uid
     compose_env["GID"] = gid
     compose_env["CI"] = "true" if is_ci else "false"
+    compose_env["HOLLOW"] = "true" if hollow else "false"
     
     # Set environment variables based on network mode
     compose_env["MARIA_HOST"] = "127.0.0.1" if host_network else "mariadb"
     compose_env["MESSAGES_HOST"] = "localhost" if host_network else "messages"
     logger.info(f"Setting MARIA_HOST={compose_env['MARIA_HOST']}")
     logger.info(f"Setting MESSAGES_HOST={compose_env['MESSAGES_HOST']}")
+    logger.info(f"Setting HOLLOW={compose_env['HOLLOW']}")
 
     # Create the generated_compose_files directory if it doesn't exist
     generated_compose_dir = os.path.join(project_root, "generated_compose_files")
     Path(generated_compose_dir).mkdir(parents=True, exist_ok=True)
+    
+    # Load the original docker-compose.yml file
+    compose_file_path = os.path.join(project_root, "docker-compose.yml")
+    with open(compose_file_path, 'r') as f:
+        compose_data = yaml.safe_load(f)
+    
+    # The path to the compose file that will be used
+    final_compose_file = compose_file_path
     
     # If using host network, we need to modify the compose file and settings
     if host_network:
@@ -175,55 +274,71 @@ def run_docker_compose(project_root, stop_event, host_network=False):
         
         # Create modified compose file with host network
         logger.info("Creating modified compose file with host network mode")
-        compose_file = os.path.join(generated_compose_dir, "docker-compose-host-network.yml")
+        final_compose_file = os.path.join(generated_compose_dir, "docker-compose-host-network.yml")
         
-        # Load and modify the docker-compose.yml file
-        with open(os.path.join(project_root, "docker-compose.yml"), 'r') as f:
-            compose_data = yaml.safe_load(f)
+        # Make a deep copy to avoid modifying the original data
+        host_network_compose = copy.deepcopy(compose_data)
         
         # Remove any network definitions
-        if 'networks' in compose_data:
-            del compose_data['networks']
+        if 'networks' in host_network_compose:
+            del host_network_compose['networks']
         
         # Set network_mode to host for all services
-        for service_name, service_config in compose_data.get('services', {}).items():
+        for service_name, service_config in host_network_compose.get('services', {}).items():
             service_config['network_mode'] = 'host'
             if 'networks' in service_config:
                 del service_config['networks']
         
         # Update the settings file paths in the volumes
         for service_name in ['server', 'messages']:
-            if service_name in compose_data.get('services', {}):
-                volumes = compose_data['services'][service_name].get('volumes', [])
+            if service_name in host_network_compose.get('services', {}):
+                volumes = host_network_compose['services'][service_name].get('volumes', [])
                 for i, volume in enumerate(volumes):
                     if 'yellow-server-settings.json' in volume:
                         volumes[i] = f"{server_settings_modified_path}:/app/settings.json"
                     elif 'yellow-server-module-messages-settings.json' in volume:
                         volumes[i] = f"{messages_settings_modified_path}:/app/settings.json"
         
-        # Write the modified compose file
-        with open(compose_file, 'w') as f:
-            yaml.dump(compose_data, f, default_flow_style=False)
+        # Update compose_data with the host network modifications
+        compose_data = host_network_compose
         
-        # Use the modified compose file
-        if is_ci:
-            cmd = [
-                "docker", "compose", 
-                "-f", compose_file,
-                "up", "--build", "--remove-orphans"
-            ]
+        # Update the final compose file path
+        final_compose_file = os.path.join(generated_compose_dir, "docker-compose-host-network.yml")
+        
+    # Handle full mode (non-hollow)
+    if not hollow:
+        # This is full mode - generate modified compose file with no bind mounts
+        logger.info("Creating modified compose file for full (non-hollow) mode")
+        full_mode_compose = generate_full_mode_compose_file(project_root, compose_data)
+        compose_data = full_mode_compose
+        
+        if host_network:
+            final_compose_file = os.path.join(generated_compose_dir, "docker-compose-host-network-full.yml")
         else:
-            cmd = ["docker", "compose", "-f", compose_file, "up", "--build", "--remove-orphans"]
+            final_compose_file = os.path.join(generated_compose_dir, "docker-compose-full.yml")
+    
+    # Write the final compose file 
+    if final_compose_file != compose_file_path:
+        with open(final_compose_file, 'w') as f:
+            yaml.dump(compose_data, f, default_flow_style=False)
+        logger.info(f"Created modified compose file: {final_compose_file}")
+    
+    # Configure the docker-compose command
+    cmd_base = ["docker", "compose"]
+    
+    # Add file path if needed
+    if final_compose_file != compose_file_path:
+        cmd_base.extend(["-f", final_compose_file])
+    
+    # In full mode, include the base-images profile
+    if not hollow:
+        cmd_base.extend(["--profile", "base-images"])
+    
+    # Complete the command
+    if is_ci:
+        cmd = cmd_base + ["up", "--build", "--remove-orphans"]
     else:
-        # Use the standard compose file with normal networking
-        if is_ci:
-            cmd = [
-                "docker", "compose", 
-                "-f", "docker-compose.yml",
-                "up", "--build", "--remove-orphans"
-            ]
-        else:
-            cmd = ["docker", "compose", "up", "--build", "--remove-orphans"]
+        cmd = cmd_base + ["up", "--build", "--remove-orphans"]
     
     logger.info(f"Running Docker Compose command: {shlex.join(cmd)} with UID={uid} GID={gid}")
     
@@ -269,7 +384,7 @@ def run_docker_compose(project_root, stop_event, host_network=False):
         logger.info(f"Docker Compose process already exited with code {process.poll()}.")
 
 
-def main(host_network=False):
+def main(host_network=False, hollow=False):
     logger.info("Starting test execution script.")
     # Get the root directory of the project
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -278,8 +393,13 @@ def main(host_network=False):
     
     # Detect if we're running in CI
     is_ci = os.environ.get('CI', 'false').lower() == 'true'
+    # Check for HOLLOW env var
+    hollow_env = os.environ.get('HOLLOW', 'false').lower() == 'true'
+    # Use env var if provided, otherwise use the function parameter
+    hollow = hollow_env if hollow_env else hollow
     logger.info(f"Running in CI environment: {is_ci}")
     logger.info(f"Using host network mode: {host_network}")
+    logger.info(f"Using hollow mode: {hollow}")
     
     # Initialize state variables
     test_status = 1  # Default to failure
@@ -298,7 +418,7 @@ def main(host_network=False):
         logger.info(f"Entering phase: {test_phase}")
         docker_thread = threading.Thread(
             target=run_docker_compose,
-            args=(project_root, stop_event, host_network)
+            args=(project_root, stop_event, host_network, hollow)
         )
         docker_thread.start()
         logger.info("Docker Compose thread started.")
@@ -349,21 +469,44 @@ def main(host_network=False):
         logger.info(f"Entering phase: {test_phase}")
         
         logger.info("========== RUNNING PLAYWRIGHT TESTS ==========")
-        playwright_test_command = [
-            "npx", "playwright", "test", "--reporter=line,github"
-        ]
-        logger.info(f"Executing Playwright tests with command: {' '.join(playwright_test_command)}")
         
-        # Pass CI flag to the test environment
-        playwright_env = os.environ.copy()
-        playwright_env["CI"] = "true" if is_ci else "false" 
-
+        # Check if we're using containerized Playwright
+        use_playwright_container = is_ci
+        
+        if use_playwright_container:
+            logger.info("Using Playwright container for tests")
+            # Run tests using the Playwright container
+            playwright_compose_file = os.path.join(project_root, "playwright-container/docker-compose.playwright.yml")
+            
+            # Run Playwright in Docker
+            playwright_test_command = [
+                "docker", "compose", 
+                "-f", final_compose_file,
+                "-f", playwright_compose_file,
+                "run", "playwright"
+            ]
+            
+            logger.info(f"Executing Playwright container with command: {' '.join(playwright_test_command)}")
+            
+            # Pass environment variables
+            playwright_env = compose_env.copy()
+        else:
+            # Run tests locally
+            playwright_test_command = [
+                "npx", "playwright", "test", "--reporter=line,github"
+            ]
+            logger.info(f"Executing local Playwright tests with command: {' '.join(playwright_test_command)}")
+            
+            # Pass CI flag to the test environment
+            playwright_env = os.environ.copy()
+            playwright_env["CI"] = "true" if is_ci else "false"
+            
         process = subprocess.Popen(
             playwright_test_command,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
-            cwd=client_dir,
+            cwd=client_dir if not use_playwright_container else project_root,
             env=playwright_env
         )
         
@@ -474,7 +617,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run Docker Compose and tests')
     parser.add_argument('--host-network', dest='host_network', action='store_true',
                         help='Use host network mode')
-    parser.set_defaults(host_network=False)
+    parser.add_argument('--hollow', dest='hollow', action='store_true',
+                        help='Use hollow mode (bind-mount app sources instead of copying them)')
+    parser.set_defaults(host_network=False, hollow=False)
     
     args = parser.parse_args()
-    main(host_network=args.host_network)
+    main(host_network=args.host_network, hollow=args.hollow)

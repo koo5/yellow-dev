@@ -1,14 +1,55 @@
-## setup
+## Setup
 
-
-1)
+1) Initialize submodules
 ```
 git submodule update --init
 ```
-2)
+
+2) Start the stack
+   
+For development (hollow mode with bind mounts):
 ```
-CI=true docker compose down; UID=(id -u) GID=(id -g) docker compose up --build --remove-orphans
+# Generate the development configuration
+python scripts/generate_compose.py --hollow=true --host-network=false
+
+# Run the stack (passing your user ID and group ID to containers)
+USER_ID=$(id -u) GROUP_ID=$(id -g) docker compose -f docker-compose.hollow.stack.yml up --build
 ```
+
+For CI (full mode without bind mounts):
+```
+./ci-run.sh false false
+```
+Parameters: `./ci-run.sh [hollow] [host-network] [run-tests]`
+
+Example usage:
+- Run in CI mode with tests: `./ci-run.sh false false true`
+- Run in CI mode without tests: `./ci-run.sh false false false`
+- Run in development mode: `./ci-run.sh true false false`
+
+## Docker Configuration
+
+This project uses a dynamic approach to Docker configuration:
+
+1. **File Structure**:
+   - `docker-compose.template.yml` - Base template for compose configuration
+   - `Dockerfile_template` - Base template for container configuration
+   - `Dockerfile_fragment_copy` - Fragment containing COPY and package installation commands
+
+2. **Generated Files** (by `scripts/generate_compose.py`):
+   - `docker-compose.{mode}.{network}.yml` files - Generated compose files
+   - `Dockerfile_hollow` - For development with bind mounts
+   - `Dockerfile_full` - For CI with copied source code
+
+3. **Modes**:
+   - `hollow` - Development mode with bind mounts
+   - `full` - CI mode with copied source code
+
+4. **Networks**:
+   - `stack` - Default Docker network with containers
+   - `hostnet` - Host network mode
+
+A symlink to the most recently generated docker-compose file is created as `docker-compose.yml`.
 
 ## development notes
 

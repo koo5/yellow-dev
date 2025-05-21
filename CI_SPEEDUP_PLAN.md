@@ -5,6 +5,42 @@
 0. in scripts/run_compose_and_test.py, introduce "hollow" argument, defaulting to False. Introduce HOLLOW env var.
 =============
 
+## Implementation Status
+
+The speedup plan has been implemented with the following architecture:
+
+1. Template-based file generation:
+   - `docker-compose.template.yml` - Base template for compose configuration
+   - `Dockerfile_template` - Base template for container configuration
+   - `Dockerfile_fragment_copy` - Fragment containing COPY and package installation commands
+
+2. Dynamic configuration generator:
+   - `scripts/generate_compose.py` - Generates customized configuration files
+   - Generates specialized Dockerfiles: `Dockerfile_hollow` and `Dockerfile_full`
+   - Generates specialized compose files: `docker-compose.{mode}.{network}.yml`
+   - Supports hollow/full modes via the `--hollow` parameter
+   - Supports host-network mode via the `--host-network` parameter
+
+3. Dedicated Playwright container for end-to-end testing:
+   - Automatically added in full mode (when `--hollow=false`)
+   - Uses the same network as the client container
+   - Writes test results to mounted volumes
+
+4. CI helper script:
+   - `ci-run.sh` - Wrapper script for running tests in CI
+   - Supports running with or without tests
+   - Collects logs and handles proper container cleanup
+
+5. Modes and Networks:
+   - **Modes**: hollow (bind mounts), full (copied code)
+   - **Networks**: stack (default Docker network), hostnet (host network mode)
+
+6. User Permissions:
+   - All Dockerfiles use ARG UID/GID parameters instead of hardcoded values
+   - Container users are created with the host's UID/GID to prevent permission issues
+   - Environment variables pass values at runtime: `USER_ID=$(id -u) GROUP_ID=$(id -g)`
+
+The system dynamically generates the appropriate Docker configuration based on the desired mode and network, allowing for efficient development and CI environments.
 
 
 1. introduce "full" and "hollow" mode. The idea is that in hollow mode, containers only get bind-mounted app sources dir, and their startup scripts install packages. In "full" mode, the hollow base images are first built, and then they are used as bases for "full" images that first COPY package lock files and install packages, then copy app sources, so that no bind-mount from outside is necessary:
