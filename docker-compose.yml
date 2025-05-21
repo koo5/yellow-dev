@@ -1,1 +1,201 @@
-/home/koom/repos/koo5/yellow-dev/1/yellow-dev/docker-compose.full.stack.yml
+networks:
+  stack-network:
+    driver: bridge
+services:
+  admin:
+    build:
+      args:
+        GROUP_ID: ${GROUP_ID:-1000}
+        USER_ID: ${USER_ID:-1000}
+      context: ./yellow-admin/
+      dockerfile: Dockerfile_full
+    depends_on:
+      server:
+        condition: service_healthy
+    deploy:
+      restart_policy:
+        condition: any
+    environment:
+      HOLLOW: 'false'
+    healthcheck:
+      interval: 30s
+      retries: 30
+      start_interval: 1s
+      test: curl -v --fail http://localhost:4000/#health
+      timeout: 20s
+    networks:
+    - stack-network
+    ports:
+    - 4000:4000
+    volumes: []
+  client:
+    build:
+      args:
+        GROUP_ID: ${GROUP_ID:-1000}
+        USER_ID: ${USER_ID:-1000}
+      context: ./yellow-client/
+      dockerfile: Dockerfile_full
+    deploy:
+      restart_policy:
+        condition: any
+    environment:
+      COMMAND: '"${CLIENT_COMMAND:-./start-docker-dev.sh}"'
+      HOLLOW: 'false'
+      VITE_YELLOW_CLIENT_DEBUG: 'true'
+      VITE_YELLOW_CLIENT_DEFAULT_ACCOUNTS: ${VITE_YELLOW_CLIENT_DEFAULT_ACCOUNTS:-}
+      VITE_YELLOW_CLIENT_PING_INTERVAL: '10000'
+      VITE_YELLOW_CLIENT_WALLET_PROVIDER_RECONNECT_INTERVAL: '1000000'
+    healthcheck:
+      interval: 30s
+      retries: 30
+      start_interval: 1s
+      test: curl -v --fail http://localhost:3000/#health
+      timeout: 20s
+    networks:
+    - stack-network
+    ports:
+    - 3000:3000
+    volumes: []
+  mariadb:
+    container_name: mariadb
+    depends_on:
+    - mariadb-init
+    deploy:
+      restart_policy:
+        condition: any
+    environment:
+      HOLLOW: 'false'
+      MYSQL_ROOT_PASSWORD: password
+      TMPDIR: /mariadb_tmp
+    healthcheck:
+      interval: 10s
+      retries: 30
+      start_interval: 1s
+      test: mariadb --protocol=tcp --host=localhost --user=workaround --password=whyistherenoping
+        --force 2>&1 | grep -v "Can't connect to server"
+      timeout: 20s
+    image: mariadb:10.5
+    networks:
+    - stack-network
+    restart: always
+    volumes:
+    - mariadb:/var/lib/mysql
+    - mariadb_tmp:/mariadb_tmp
+  mariadb-init:
+    command:
+    - sh
+    - -c
+    - mkdir -p /mariadb_tmp && chmod 1777 /mariadb_tmp
+    container_name: mariadb-init
+    entrypoint: []
+    environment:
+      HOLLOW: 'false'
+    image: alpine
+    networks:
+    - stack-network
+    volumes:
+    - mariadb_tmp:/mariadb_tmp
+  messages:
+    build:
+      args:
+        GROUP_ID: ${GROUP_ID:-1000}
+        USER_ID: ${USER_ID:-1000}
+      context: ./yellow-server-module-messages/
+      dockerfile: Dockerfile_full
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    deploy:
+      restart_policy:
+        condition: any
+    environment:
+      CI: ${CI:-}
+      HOLLOW: 'false'
+      MARIA_HOST: mariadb
+      MESSAGES_HOST: messages
+      SERVER_HOST: server
+      VITE_YELLOW_SETTINGS_PATH: /app/settings.json
+    healthcheck:
+      interval: 30s
+      retries: 30
+      start_interval: 1s
+      test: curl -v --fail http://localhost:25001/health
+      timeout: 20s
+    networks:
+    - stack-network
+    ports:
+    - 25001:25001
+    volumes:
+    - server_logs:/var/log/yellow
+    - ./yellow-server-module-messages-settings.json:/app/settings.json
+  playwright:
+    build:
+      args:
+        GROUP_ID: ${GROUP_ID:-1000}
+        USER_ID: ${USER_ID:-1000}
+      context: .
+      dockerfile: ./playwright-container/Dockerfile
+    depends_on:
+      client:
+        condition: service_healthy
+    environment:
+      CI: 'true'
+      SERVER_HOST: server
+    network_mode: service:client
+    volumes:
+    - ./test-results:/app/yellow-client/test-results
+    - ./playwright-report:/app/yellow-client/playwright-report
+  server:
+    build:
+      args:
+        GROUP_ID: ${GROUP_ID:-1000}
+        USER_ID: ${USER_ID:-1000}
+      context: ./yellow-server/
+      dockerfile: Dockerfile_full
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      server-init:
+        condition: service_completed_successfully
+    deploy:
+      restart_policy:
+        condition: any
+    environment:
+      CI: ${CI:-}
+      HOLLOW: 'false'
+      MARIA_HOST: mariadb
+      MESSAGES_HOST: messages
+      SERVER_HOST: server
+      VITE_YELLOW_SETTINGS_PATH: /app/settings.json
+    healthcheck:
+      interval: 10s
+      retries: 30
+      start_interval: 1s
+      test: curl -v --fail http://localhost:8085/health
+      timeout: 20s
+    networks:
+    - stack-network
+    ports:
+    - 8085:8085
+    volumes:
+    - server_tmp:/tmp
+    - server_logs:/var/log/yellow
+    - ./yellow-server-settings.json:/app/settings.json
+  server-init:
+    command:
+    - sh
+    - -c
+    - mkdir -p /tmp && chmod 1777 /tmp
+    entrypoint: []
+    environment:
+      HOLLOW: 'false'
+    image: alpine
+    networks:
+    - stack-network
+    volumes:
+    - server_tmp:/tmp
+volumes:
+  mariadb: null
+  mariadb_tmp: null
+  server_logs: null
+  server_tmp: null
