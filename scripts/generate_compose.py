@@ -179,6 +179,7 @@ def apply_host_network(compose_data, project_root, output_dir):
         if service_name in ['server', 'messages']:
             service_config['environment']['MARIA_HOST'] = 'localhost'
             service_config['environment']['MESSAGES_HOST'] = 'localhost'
+            service_config['environment']['SERVER_HOST'] = 'localhost'
     
     # Update settings paths in volumes
     for service_name in ['server', 'messages']:
@@ -220,6 +221,7 @@ def apply_stack_network(compose_data):
         if service_name in ['server', 'messages']:
             service_config['environment']['MARIA_HOST'] = 'mariadb'
             service_config['environment']['MESSAGES_HOST'] = 'messages'
+            service_config['environment']['SERVER_HOST'] = 'server'
         
         # Ensure networks section exists for the service
         if 'networks' not in service_config and service_name not in ['mariadb-init', 'server-init']:
@@ -236,7 +238,7 @@ def apply_hollow_mode(compose_data):
         
         service_config['environment']['HOLLOW'] = 'true'
 
-def apply_full_mode(compose_data):
+def apply_full_mode(compose_data, host_network=False):
     """Apply full mode: remove bind mounts for source code and the common-init service."""
     print("Applying full mode: removing bind mounts and common-init service...")
     
@@ -291,6 +293,9 @@ def apply_full_mode(compose_data):
     playwright_dir = os.path.join(get_project_root(), 'playwright-container')
     os.makedirs(playwright_dir, exist_ok=True)
     
+    # Determine SERVER_HOST based on network mode
+    server_host = 'localhost' if host_network else 'server'
+    
     # Add the Playwright service to the compose file
     compose_data['services']['playwright'] = {
         'build': {
@@ -302,7 +307,8 @@ def apply_full_mode(compose_data):
             }
         },
         'environment': {
-            'CI': 'true'
+            'CI': 'true',
+            'SERVER_HOST': server_host
         },
         'network_mode': 'service:client',  # Share network with client container
         'volumes': [
@@ -353,7 +359,7 @@ def main():
         apply_hollow_mode(modified_compose)
         mode_suffix = "hollow"
     else:
-        apply_full_mode(modified_compose)
+        apply_full_mode(modified_compose, host_network)
         mode_suffix = "full"
     
     # Generate the output filename

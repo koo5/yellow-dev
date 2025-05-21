@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright:v1.41.1-jammy
+FROM mcr.microsoft.com/playwright:v1.52.0-jammy
 
 WORKDIR /app
 
@@ -14,4 +14,7 @@ COPY ./yellow-admin /app/yellow-admin
 
 RUN cd /app/yellow-client && ~/.bun/bin/bun i --frozen-lockfile
 
-CMD ["npx", "playwright", "test", "/app/yellow-client/src/modules/org.libersoft.messages/tests/e2e/everything.test.ts", "--reporter=line,github"]
+
+
+
+CMD ["sh", "-c", "export REPORTERS=\"line\"; if [ \"$CI\" = \"true\" ]; then export REPORTERS=\"line,github\"; fi; npx --prefix /app/yellow-client playwright test /app/yellow-client/src/modules/org.libersoft.messages/tests/e2e/everything.test.ts --timeout 100000 --reporter=$REPORTERS"]

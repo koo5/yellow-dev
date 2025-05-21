@@ -81,6 +81,7 @@ services:
       - CI=${CI:-}
       - MARIA_HOST=${MARIA_HOST:-mariadb}
       - MESSAGES_HOST=${MESSAGES_HOST:-messages}
+      - SERVER_HOST=${SERVER_HOST:-server}
     depends_on:
       common-init: {condition: service_completed_successfully}
       server-init: {condition: service_completed_successfully}
@@ -117,6 +118,7 @@ services:
       - CI=${CI:-}
       - MARIA_HOST=${MARIA_HOST:-mariadb}
       - MESSAGES_HOST=${MESSAGES_HOST:-messages}
+      - SERVER_HOST=${SERVER_HOST:-server}
     depends_on:
       common-init: {condition: service_completed_successfully}
       mariadb: {condition: service_healthy}

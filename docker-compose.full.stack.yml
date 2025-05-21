@@ -113,6 +113,7 @@ services:
       HOLLOW: 'false'
       MARIA_HOST: mariadb
       MESSAGES_HOST: messages
+      SERVER_HOST: server
       VITE_YELLOW_SETTINGS_PATH: /app/settings.json
     healthcheck:
       interval: 30s
@@ -139,6 +140,7 @@ services:
         condition: service_healthy
     environment:
       CI: 'true'
+      SERVER_HOST: server
     network_mode: service:client
     volumes:
     - ./test-results:/app/yellow-client/test-results
@@ -163,6 +165,7 @@ services:
       HOLLOW: 'false'
       MARIA_HOST: mariadb
       MESSAGES_HOST: messages
+      SERVER_HOST: server
       VITE_YELLOW_SETTINGS_PATH: /app/settings.json
     healthcheck:
       interval: 10s
