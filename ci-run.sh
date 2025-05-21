@@ -36,16 +36,15 @@ export USER_ID=$(id -u)
 export GROUP_ID=$(id -g)
 echo "Running with USER_ID=$USER_ID and GROUP_ID=$GROUP_ID"
 
+# Create necessary directories for Playwright
+echo "Creating test result directories..."
+mkdir -p test-results playwright-report
+
 if [ "$RUN_TESTS" = "true" ]; then
   # Start services, run tests, then shut down
   echo "Running with tests..."
   set -x
   docker compose -f $COMPOSE_FILE up --build --detach --remove-orphans
-  
-  # Wait for services to be healthy
-  echo "Waiting for services to be ready..."
-  sleep 10
-  docker compose -f $COMPOSE_FILE ps
   
   # Run tests with the Playwright container
   echo "Running tests with Playwright container..."

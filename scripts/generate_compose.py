@@ -138,7 +138,7 @@ def apply_host_network(compose_data, project_root, output_dir):
         server_settings = json.load(f)
     
     # Set database host to localhost
-    server_settings['database']['host'] = '127.0.0.1'
+    server_settings['database']['host'] = 'localhost'
     server_settings_modified_path = os.path.join(output_dir, 'yellow-server-settings.json')
     with open(server_settings_modified_path, 'w') as f:
         json.dump(server_settings, f, indent=2)
@@ -149,7 +149,7 @@ def apply_host_network(compose_data, project_root, output_dir):
         messages_settings = json.load(f)
     
     # Set database host to localhost
-    messages_settings['database']['host'] = '127.0.0.1'
+    messages_settings['database']['host'] = 'localhost'
     messages_settings_modified_path = os.path.join(output_dir, 'yellow-server-module-messages-settings.json')
     with open(messages_settings_modified_path, 'w') as f:
         json.dump(messages_settings, f, indent=2)
@@ -177,7 +177,7 @@ def apply_host_network(compose_data, project_root, output_dir):
         
         # Set host-specific env vars
         if service_name in ['server', 'messages']:
-            service_config['environment']['MARIA_HOST'] = '127.0.0.1'
+            service_config['environment']['MARIA_HOST'] = 'localhost'
             service_config['environment']['MESSAGES_HOST'] = 'localhost'
     
     # Update settings paths in volumes
