@@ -40,7 +40,7 @@ if [ "$RUN_TESTS" = "true" ]; then
   # Start services, run tests, then shut down
   echo "Running with tests..."
   set -x
-  docker compose -f $COMPOSE_FILE up --build --detach
+  docker compose -f $COMPOSE_FILE up --build --detach --remove-orphans
   
   # Wait for services to be healthy
   echo "Waiting for services to be ready..."
@@ -62,5 +62,5 @@ if [ "$RUN_TESTS" = "true" ]; then
 else
   # Just run everything and keep it running
   echo "Running services without tests..."
-  docker compose -f $COMPOSE_FILE up --build
+  docker compose -f $COMPOSE_FILE up --build --remove-orphans
 fi

@@ -107,7 +107,7 @@ def process_service_dockerfiles(compose_data, project_root, hollow):
     
     for service_name, service_config in compose_data.get('services', {}).items():
         # Skip services that don't need modification
-        if service_name in ['mariadb', 'mariadb-init', 'server-init', 'common-init']:
+        if service_name in ['mariadb', 'mariadb-init', 'server-init']:
             continue
             
         # Generate Dockerfile for this service if it has a build section
@@ -237,8 +237,8 @@ def apply_hollow_mode(compose_data):
         service_config['environment']['HOLLOW'] = 'true'
 
 def apply_full_mode(compose_data):
-    """Apply full mode: remove bind mounts for source code."""
-    print("Applying full mode: removing bind mounts...")
+    """Apply full mode: remove bind mounts for source code and the common-init service."""
+    print("Applying full mode: removing bind mounts and common-init service...")
     
     # Set HOLLOW environment variable for all services
     for service_name, service_config in compose_data.get('services', {}).items():
@@ -250,21 +250,39 @@ def apply_full_mode(compose_data):
     # Remove app source bind mounts
     for service_name, service_config in compose_data.get('services', {}).items():
         # Skip services that don't need modification
-        if service_name in ['mariadb', 'mariadb-init', 'server-init', 'common-init']:
+        if service_name in ['mariadb', 'mariadb-init', 'server-init']:
             continue
         
-        # Remove volume bind mounts that are for app sources
+        # Remove volume bind mounts that are for app sources, but keep settings.json files
         if 'volumes' in service_config:
             volumes_to_keep = []
             for volume in service_config['volumes']:
-                # Check if it's an app source bind mount
-                if not (isinstance(volume, str) and './yellow-' in volume):
+                # Keep settings.json files and non-app-source volumes
+                if not (isinstance(volume, str) and './yellow-' in volume) or (isinstance(volume, str) and 'settings.json' in volume):
                     volumes_to_keep.append(volume)
+                    # If keeping a settings.json file, log it
+                    if isinstance(volume, str) and 'settings.json' in volume:
+                        print(f"Preserving settings file mount {volume} for service {service_name}")
                 else:
                     print(f"Removing bind mount {volume} from service {service_name}")
             
             # Replace volumes with filtered list
             service_config['volumes'] = volumes_to_keep
+    
+    # Remove the common-init service entirely
+    if 'common-init' in compose_data.get('services', {}):
+        print("Removing common-init service in full mode")
+        del compose_data['services']['common-init']
+        
+    # Remove dependencies on common-init
+    for service_name, service_config in compose_data.get('services', {}).items():
+        if 'depends_on' in service_config and 'common-init' in service_config['depends_on']:
+            print(f"Removing common-init dependency from service {service_name}")
+            del service_config['depends_on']['common-init']
+            
+            # If depends_on is now empty, remove it
+            if not service_config['depends_on']:
+                del service_config['depends_on']
     
     # Add a Playwright container for testing in CI mode
     print("Adding Playwright container for testing...")

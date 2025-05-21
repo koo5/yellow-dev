@@ -56,23 +56,6 @@ services:
     ports:
     - 3000:3000
     volumes: []
-  common-init:
-    build:
-      args:
-        GROUP_ID: ${GROUP_ID:-1000}
-        USER_ID: ${USER_ID:-1000}
-      context: ./yellow-server-common/
-    command:
-    - sh
-    - -c
-    - cd /app/yellow-server-common; ~/.bun/bin/bun i --frozen-lockfile
-    entrypoint: []
-    environment:
-      HOLLOW: 'false'
-    networks:
-    - stack-network
-    volumes:
-    - ./yellow-server-common:/app/yellow-server-common
   mariadb:
     container_name: mariadb
     depends_on:
@@ -120,8 +103,6 @@ services:
       context: ./yellow-server-module-messages/
       dockerfile: Dockerfile_full
     depends_on:
-      common-init:
-        condition: service_completed_successfully
       mariadb:
         condition: service_healthy
     deploy:
@@ -145,6 +126,7 @@ services:
     - 25001:25001
     volumes:
     - server_logs:/var/log/yellow
+    - ./yellow-server-module-messages-settings.json:/app/settings.json
   playwright:
     build:
       args:
@@ -169,8 +151,6 @@ services:
       context: ./yellow-server/
       dockerfile: Dockerfile_full
     depends_on:
-      common-init:
-        condition: service_completed_successfully
       mariadb:
         condition: service_healthy
       server-init:
@@ -197,6 +177,7 @@ services:
     volumes:
     - server_tmp:/tmp
     - server_logs:/var/log/yellow
+    - ./yellow-server-settings.json:/app/settings.json
   server-init:
     command:
     - sh
