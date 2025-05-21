@@ -23,7 +23,6 @@ jobs:
     - name: Print working directory
       run: |
         pwd
-        ls -la
 
     # Conditionally checkout the client repo if specified
     - name: Checkout custom client code
@@ -37,8 +36,6 @@ jobs:
     - name: Checkout yellow-dev
       uses: actions/checkout@v3
       with:
-        repository: koo5/yellow-dev
-        ref: master
         path: yellow-dev
         submodules: recursive
     
@@ -61,12 +58,7 @@ jobs:
         if [ -f yellow-dev/requirements.txt ]; then
           pip install -r yellow-dev/requirements.txt
         fi
-    
-    - name: Set up Bun
-      uses: oven-sh/setup-bun@v1
-      with:
-        bun-version: latest
-    
+
     # Install Docker Compose v2
     - name: Install Docker Compose
       run: |
@@ -90,40 +82,10 @@ jobs:
         
         # Verify docker-compose script works
         docker-compose version
+    
 
-    - name: Install playwright
+    - name: Run E2E Tests
       run: |
-        cd yellow-dev/yellow-client
-        bun install
-        bun x playwright install --with-deps
-    
-    - name: Install Fish Shell and MariaDB Client
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y fish mariadb-client
-    
-    - name: Run E2E Tests without buildx
-      run: |
-        ls -la
         cd yellow-dev
-        ls -la
-        
-        # Verify script exists
-        if [ ! -f "scripts/run_compose_and_test.py" ]; then
-          echo "ERROR: Test script not found at expected location scripts/run_compose_and_test.py"
-          find . -name "run_compose_and_test.py"
-          exit 1
-        fi
-
-        # Check for Dockerfiles in service contexts
-        echo "Checking for Dockerfiles in service contexts..."
-        for dir in yellow-server-common yellow-server yellow-client yellow-admin yellow-server-module-messages; do
-          if [ -f "$dir/Dockerfile" ]; then
-            echo "✅ $dir/Dockerfile exists"
-          else
-            echo "❌ $dir/Dockerfile is missing"  
-          fi
-        done
-        
-        CI=true \
-        python scripts/run_compose_and_test.py
+        # Run CI script with full mode and stack network
+        ./ci-run.sh false false true
