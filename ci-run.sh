@@ -11,7 +11,7 @@ RUN_TESTS=${3:-true}
 
 # Generate the customized docker-compose file with Dockerfiles
 echo "Generating Dockerfiles and compose file..."
-python scripts/generate_compose.py --hollow=$HOLLOW --host-network=$HOST_NETWORK
+scripts/generate_compose.py --hollow=$HOLLOW --host-network=$HOST_NETWORK
 
 # Determine which compose file was generated
 if [ "$HOLLOW" = "true" ]; then
