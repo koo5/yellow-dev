@@ -7,6 +7,10 @@ services:
       args:
         GROUP_ID: ${GROUP_ID:-1000}
         USER_ID: ${USER_ID:-1000}
+      cache_from:
+      - ${BUILDX_CACHE:-}
+      cache_to:
+      - ${BUILDX_CACHE:-}
       context: ./yellow-admin/
       dockerfile: Dockerfile_full
     depends_on:
@@ -33,6 +37,10 @@ services:
       args:
         GROUP_ID: ${GROUP_ID:-1000}
         USER_ID: ${USER_ID:-1000}
+      cache_from:
+      - ${BUILDX_CACHE:-}
+      cache_to:
+      - ${BUILDX_CACHE:-}
       context: ./yellow-client/
       dockerfile: Dockerfile_full
     deploy:
@@ -100,6 +108,10 @@ services:
       args:
         GROUP_ID: ${GROUP_ID:-1000}
         USER_ID: ${USER_ID:-1000}
+      cache_from:
+      - ${BUILDX_CACHE:-}
+      cache_to:
+      - ${BUILDX_CACHE:-}
       context: ./yellow-server-module-messages/
       dockerfile: Dockerfile_full
     depends_on:
@@ -150,6 +162,10 @@ services:
       args:
         GROUP_ID: ${GROUP_ID:-1000}
         USER_ID: ${USER_ID:-1000}
+      cache_from:
+      - ${BUILDX_CACHE:-}
+      cache_to:
+      - ${BUILDX_CACHE:-}
       context: ./yellow-server/
       dockerfile: Dockerfile_full
     depends_on:

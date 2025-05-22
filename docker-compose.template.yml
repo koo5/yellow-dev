@@ -46,6 +46,10 @@ services:
       args:
         USER_ID: "${USER_ID:-1000}"
         GROUP_ID: "${GROUP_ID:-1000}"
+      cache_from:
+        - "${BUILDX_CACHE:-}"
+      cache_to:
+        - "${BUILDX_CACHE:-}"
     volumes:
       - ./yellow-server-common:/app/yellow-server-common
     command: ["sh", "-c", "cd /app/yellow-server-common; ~/.bun/bin/bun i --frozen-lockfile"]
@@ -70,6 +74,10 @@ services:
       args:
         USER_ID: "${USER_ID:-1000}"
         GROUP_ID: "${GROUP_ID:-1000}"
+      cache_from:
+        - "${BUILDX_CACHE:-}"
+      cache_to:
+        - "${BUILDX_CACHE:-}"
     volumes:
       - server_tmp:/tmp
       - server_logs:/var/log/yellow
@@ -108,6 +116,10 @@ services:
       args:
         USER_ID: "${USER_ID:-1000}"
         GROUP_ID: "${GROUP_ID:-1000}"
+      cache_from:
+        - "${BUILDX_CACHE:-}"
+      cache_to:
+        - "${BUILDX_CACHE:-}"
     volumes:
       - server_logs:/var/log/yellow
       - ./yellow-server-module-messages:/app/app
@@ -143,6 +155,10 @@ services:
       args:
         USER_ID: "${USER_ID:-1000}"
         GROUP_ID: "${GROUP_ID:-1000}"
+      cache_from:
+        - "${BUILDX_CACHE:-}"
+      cache_to:
+        - "${BUILDX_CACHE:-}"
     volumes:
       - ./yellow-admin:/app/app
       - ./yellow-server-common:/app/yellow-server-common
@@ -168,6 +184,10 @@ services:
       args:
         USER_ID: "${USER_ID:-1000}"
         GROUP_ID: "${GROUP_ID:-1000}"
+      cache_from:
+        - "${BUILDX_CACHE:-}"
+      cache_to:
+        - "${BUILDX_CACHE:-}"
     volumes:
       - ./yellow-client:/app/app
     environment:
