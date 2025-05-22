@@ -7,6 +7,10 @@ services:
       args:
         GROUP_ID: ${GROUP_ID:-1000}
         USER_ID: ${USER_ID:-1000}
+      cache_from:
+      - ${BUILDX_CACHE:-}
+      cache_to:
+      - ${BUILDX_CACHE:-}
       context: ./yellow-admin/
       dockerfile: Dockerfile_full
     depends_on:
@@ -33,6 +37,10 @@ services:
       args:
         GROUP_ID: ${GROUP_ID:-1000}
         USER_ID: ${USER_ID:-1000}
+      cache_from:
+      - ${BUILDX_CACHE:-}
+      cache_to:
+      - ${BUILDX_CACHE:-}
       context: ./yellow-client/
       dockerfile: Dockerfile_full
     deploy:
@@ -100,6 +108,10 @@ services:
       args:
         GROUP_ID: ${GROUP_ID:-1000}
         USER_ID: ${USER_ID:-1000}
+      cache_from:
+      - ${BUILDX_CACHE:-}
+      cache_to:
+      - ${BUILDX_CACHE:-}
       context: ./yellow-server-module-messages/
       dockerfile: Dockerfile_full
     depends_on:
@@ -128,28 +140,15 @@ services:
     volumes:
     - server_logs:/var/log/yellow
     - ./yellow-server-module-messages-settings.json:/app/settings.json
-  playwright:
-    build:
-      args:
-        GROUP_ID: ${GROUP_ID:-1000}
-        USER_ID: ${USER_ID:-1000}
-      context: .
-      dockerfile: ./playwright-container/Dockerfile
-    depends_on:
-      client:
-        condition: service_healthy
-    environment:
-      CI: 'true'
-      SERVER_HOST: server
-    network_mode: service:client
-    volumes:
-    - ./test-results:/app/yellow-client/test-results
-    - ./playwright-report:/app/yellow-client/playwright-report
   server:
     build:
       args:
         GROUP_ID: ${GROUP_ID:-1000}
         USER_ID: ${USER_ID:-1000}
+      cache_from:
+      - ${BUILDX_CACHE:-}
+      cache_to:
+      - ${BUILDX_CACHE:-}
       context: ./yellow-server/
       dockerfile: Dockerfile_full
     depends_on:

@@ -322,6 +322,13 @@ def apply_full_mode(compose_data, host_network=False):
     
     return compose_data
 
+def remove_playwright_container(compose_data):
+    """Remove the playwright container from compose data."""
+    if 'playwright' in compose_data.get('services', {}):
+        print("Removing playwright container...")
+        del compose_data['services']['playwright']
+    return compose_data
+
 def main():
     """Main function to generate customized docker-compose files."""
     args = parse_args()
@@ -371,6 +378,19 @@ def main():
         yaml.dump(modified_compose, f, default_flow_style=False)
     
     print(f"Generated customized docker-compose file: {output_path}")
+    
+    # For full.stack mode, also generate docker-compose.yml without playwright
+    if mode_suffix == "full" and network_suffix == "stack":
+        # Create a copy without playwright
+        no_playwright_compose = copy.deepcopy(modified_compose)
+        remove_playwright_container(no_playwright_compose)
+        
+        # Write docker-compose.yml without playwright
+        no_playwright_path = os.path.join(project_root, "docker-compose.yml")
+        with open(no_playwright_path, 'w') as f:
+            yaml.dump(no_playwright_compose, f, default_flow_style=False)
+        
+        print(f"Generated docker-compose.yml without playwright: {no_playwright_path}")
     
     return 0
 
