@@ -103,3 +103,21 @@ jobs:
         ls -l
         # Run CI script with full mode and stack network
         ./ci-run.sh false false true
+
+    - name: Upload Playwright Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-results-${{ github.run_id }}
+        path: |
+          yellow-dev/test-results/
+          yellow-dev/playwright-report/
+        retention-days: 30
+
+    - name: Upload Docker Logs
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: docker-logs-${{ github.run_id }}
+        path: yellow-dev/docker-compose.log
+        retention-days: 7
