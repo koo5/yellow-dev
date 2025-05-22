@@ -36,8 +36,11 @@ jobs:
     - name: Checkout yellow-dev
       uses: actions/checkout@v3
       with:
+        repository: koo5/yellow-dev
+        ref: master
         path: yellow-dev
         submodules: recursive
+
     
     # Replace yellow-client code if a custom client was checked out
     - name: Replace yellow-client code with custom source
@@ -92,4 +95,3 @@ jobs:
         ls -l
         # Run CI script with full mode and stack network
         ./ci-run.sh false false true
-        
