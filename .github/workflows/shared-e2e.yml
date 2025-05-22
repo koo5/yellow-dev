@@ -83,15 +83,16 @@ jobs:
         # Verify installation
         docker compose version
 
-    # Configure Docker Buildx to use cache
+    # Configure Docker Buildx to use cache with better scoping
     - name: Configure Docker Buildx Cache
       run: |
         # Create a custom buildx builder with cache configuration
         docker buildx create --name ci-builder --driver docker-container --use
         docker buildx inspect --bootstrap
         
-        # Configure BUILDX_CACHE environment for the CI script
-        echo "BUILDX_CACHE=type=gha,mode=max" >> $GITHUB_ENV
+        # Configure optimized BUILDX_CACHE with scoping for better cache hits
+        echo "BUILDX_CACHE=type=gha,mode=max,scope=${{ github.ref_name }}-${{ github.workflow }}" >> $GITHUB_ENV
+        echo "BUILDX_CACHE_FALLBACK=type=gha,mode=max,scope=master-${{ github.workflow }}" >> $GITHUB_ENV
         echo "DOCKER_BUILDKIT=1" >> $GITHUB_ENV
 
     - name: Run E2E Tests
