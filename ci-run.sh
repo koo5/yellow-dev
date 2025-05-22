@@ -9,9 +9,11 @@ HOLLOW=${1:-false}
 HOST_NETWORK=${2:-false}
 RUN_TESTS=${3:-true}
 
-# Generate the customized docker-compose file with Dockerfiles
-echo "Generating Dockerfiles and compose file..."
-scripts/generate_compose.py --hollow=$HOLLOW --host-network=$HOST_NETWORK
+if [ "$GENERATE" = "true" ]; then
+  # Generate the customized docker-compose file with Dockerfiles
+  echo "Generating Dockerfiles and compose file..."
+  scripts/generate_compose.py --hollow=$HOLLOW --host-network=$HOST_NETWORK
+fi
 
 # Determine which compose file was generated
 if [ "$HOLLOW" = "true" ]; then
@@ -42,7 +44,7 @@ mkdir -p test-results playwright-report
 
 if [ "$RUN_TESTS" = "true" ]; then
   # Start services, run tests, then shut down
-  echo "Running with tests..."
+  echo "Running ..."
   set -x
   docker compose -f $COMPOSE_FILE up --build --detach --remove-orphans
   
