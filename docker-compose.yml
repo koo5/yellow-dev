@@ -9,6 +9,7 @@ services:
         USER_ID: ${USER_ID:-1000}
       cache_from:
       - ${BUILDX_CACHE:-}
+      - ${BUILDX_CACHE_FALLBACK:-}
       cache_to:
       - ${BUILDX_CACHE:-}
       context: ./yellow-admin/
@@ -39,6 +40,7 @@ services:
         USER_ID: ${USER_ID:-1000}
       cache_from:
       - ${BUILDX_CACHE:-}
+      - ${BUILDX_CACHE_FALLBACK:-}
       cache_to:
       - ${BUILDX_CACHE:-}
       context: ./yellow-client/
@@ -110,6 +112,7 @@ services:
         USER_ID: ${USER_ID:-1000}
       cache_from:
       - ${BUILDX_CACHE:-}
+      - ${BUILDX_CACHE_FALLBACK:-}
       cache_to:
       - ${BUILDX_CACHE:-}
       context: ./yellow-server-module-messages/
@@ -147,6 +150,7 @@ services:
         USER_ID: ${USER_ID:-1000}
       cache_from:
       - ${BUILDX_CACHE:-}
+      - ${BUILDX_CACHE_FALLBACK:-}
       cache_to:
       - ${BUILDX_CACHE:-}
       context: ./yellow-server/
