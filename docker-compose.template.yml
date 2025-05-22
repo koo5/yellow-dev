@@ -63,7 +63,7 @@ services:
       - stack-network
     volumes:
       - server_tmp:/tmp
-    command: ["sh", "-c", "mkdir -p /tmp && chmod 1777 /tmp"]
+    command: ["sh", "-c", "chown -R USER_ID:GROUP_ID /tmp; mkdir -p /tmp ;chmod 1777 /tmp"]
     entrypoint: []
 
 
