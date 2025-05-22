@@ -8,6 +8,7 @@ set -euo pipefail
 HOLLOW=${1:-false}
 HOST_NETWORK=${2:-false}
 RUN_TESTS=${3:-true}
+GENERATE=${4:-false}
 
 if [ "$GENERATE" = "true" ]; then
   # Generate the customized docker-compose file with Dockerfiles
