@@ -1,4 +1,4 @@
-name: E2E Tests Without BuildX
+name: E2E Tests With BuildX Caching
 
 # Make this workflow reusable
 on:
@@ -62,6 +62,13 @@ jobs:
 #          pip install -r yellow-dev/requirements.txt
 #        fi
 
+    # Set up Docker Buildx with cache support
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      with:
+        driver: docker-container
+        platforms: linux/amd64
+
     # Install Docker Compose v2
     - name: Install Docker Compose
       run: |
@@ -75,7 +82,17 @@ jobs:
         
         # Verify installation
         docker compose version
-            
+
+    # Configure Docker Buildx to use cache
+    - name: Configure Docker Buildx Cache
+      run: |
+        # Create a custom buildx builder with cache configuration
+        docker buildx create --name ci-builder --driver docker-container --use
+        docker buildx inspect --bootstrap
+        
+        # Configure BUILDX_CACHE environment for the CI script
+        echo "BUILDX_CACHE=type=gha,mode=max" >> $GITHUB_ENV
+        echo "DOCKER_BUILDKIT=1" >> $GITHUB_ENV
 
     - name: Run E2E Tests
       run: |
