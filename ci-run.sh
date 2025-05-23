@@ -9,7 +9,7 @@ HOLLOW=${1:-false}
 HOST_NETWORK=${2:-false}
 HTTP=${3:-false}
 RUN_TESTS=${3:-true}
-GENERATE=${4:-false}
+GENERATE=${4:-true}
 
 if [ "$GENERATE" = "true" ]; then
   # Generate the customized docker-compose file with Dockerfiles

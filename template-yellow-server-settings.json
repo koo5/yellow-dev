@@ -8,13 +8,13 @@
   "certificates": [
    {
     "domain": "localhost",
-    "private": "server.key",
-    "public": "server.crt"
+    "private": "/app/certs/server.key",
+    "public": "/app/certs/server.crt"
    },
    {
     "domain": "server",
-    "private": "server.key",
-    "public": "server.crt"
+    "private": "/app/certs/server.key",
+    "public": "/app/certs/server.crt"
    }
   ],
   "socket_path": "server.sock",

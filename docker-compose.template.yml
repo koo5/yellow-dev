@@ -80,6 +80,7 @@ services:
       - ./yellow-server:/app/app
       - ./yellow-server-common:/app/yellow-server-common
       - ./template-yellow-server-settings.json:/app/settings.json
+      - ./certs:/app/certs:ro
     environment:
       - VITE_YELLOW_SETTINGS_PATH=/app/settings.json
       - CI=${CI:-}
