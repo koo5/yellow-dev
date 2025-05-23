@@ -255,18 +255,31 @@ def apply_full_mode(compose_data, host_network=False):
         if service_name in ['mariadb', 'mariadb-init', 'server-init']:
             continue
         
-        # Remove volume bind mounts that are for app sources, but keep settings.json files
+        # Remove volume bind mounts that are for app sources, logs, and tmp, but keep settings.json files
         if 'volumes' in service_config:
             volumes_to_keep = []
             for volume in service_config['volumes']:
-                # Keep settings.json files and non-app-source volumes
-                if not (isinstance(volume, str) and './yellow-' in volume) or (isinstance(volume, str) and 'settings.json' in volume):
+                should_remove = False
+                
+                # Check if it's a bind mount (string format)
+                if isinstance(volume, str):
+                    # Remove app source bind mounts
+                    if './yellow-' in volume and 'settings.json' not in volume:
+                        should_remove = True
+                    # Remove logs bind mounts
+                    elif 'server_logs' in volume:
+                        should_remove = True
+                    # Remove tmp bind mounts  
+                    elif 'server_tmp' in volume:
+                        should_remove = True
+                
+                if should_remove:
+                    print(f"Removing bind mount {volume} from service {service_name}")
+                else:
                     volumes_to_keep.append(volume)
                     # If keeping a settings.json file, log it
                     if isinstance(volume, str) and 'settings.json' in volume:
                         print(f"Preserving settings file mount {volume} for service {service_name}")
-                else:
-                    print(f"Removing bind mount {volume} from service {service_name}")
             
             # Replace volumes with filtered list
             service_config['volumes'] = volumes_to_keep
