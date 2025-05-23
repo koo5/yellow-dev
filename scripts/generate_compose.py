@@ -20,7 +20,7 @@ def parse_args():
                         help='Use hollow mode (bind-mount app sources) or full mode (default: true)')
     parser.add_argument('--host-network', type=str, choices=['true', 'false'], default='false',
                         help='Use host network mode (default: false)')
-    parser.add_argument('--https', type=str, choices=['true', 'false'], default='false',
+    parser.add_argument('--https', type=str, choices=['true', 'false'], default='true',
                         help='Use HTTPS protocol (default: false)')
     return parser.parse_args()
 

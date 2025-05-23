@@ -33,6 +33,16 @@ echo "Running with USER_ID=$USER_ID and GROUP_ID=$GROUP_ID"
 echo "Creating test result directories..."
 mkdir -p test-results playwright-report
 
+if [ "$HTTPS" = "true" ]; then
+  # create a self-signed certificate if it doesn't exist
+  if [ ! -f certs/server.crt ]; then
+    echo "Generating self-signed certificate..."
+    ./mkcerts.sh
+  fi
+  echo "Running with HTTPS enabled"
+else
+  echo "Running with HTTPS disabled"
+fi
 
 if [ "$RUN_TESTS" = "true" ]; then
   # Start services, run tests, then shut down
