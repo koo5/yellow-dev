@@ -67,7 +67,7 @@ services:
     environment:
       USER_ID: "${USER_ID:-1000}"
       GROUP_ID: "${GROUP_ID:-1000}"
-    command: ["sh", "-c", "chown -R ${USER_ID:-1000}:${GROUP_ID:-1000} /tmp; mkdir -p /tmp/yellow; chown -R ${USER_ID:-1000}:${GROUP_ID:-1000} /tmp/yellow ;chmod 1777 /tmp/yellow"]
+    command: ["sh", "-c", "chown -R ${USER_ID:-1000}:${GROUP_ID:-1000} /tmp; mkdir -p /tmp/yellow; chown -R ${USER_ID:-1000}:${GROUP_ID:-1000} /tmp/yellow ;chmod 1777 /tmp/yellow; echo ok; mkdir -p /var/log/yellow; chown -R ${USER_ID:-1000}:${GROUP_ID:-1000} /var/log/yellow ;chmod 1777 /var/log/yellow"]
     entrypoint: []
 
 
@@ -141,6 +141,7 @@ services:
       - SERVER_HOST=${SERVER_HOST:-server}
     depends_on:
       common-init: {condition: service_completed_successfully}
+      server-init: {condition: service_completed_successfully}
       mariadb: {condition: service_healthy}
     deploy:
       restart_policy:
