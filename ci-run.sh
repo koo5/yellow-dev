@@ -7,7 +7,7 @@ set -euo pipefail
 # Parse arguments
 HOLLOW=${1:-false}
 HOST_NETWORK=${2:-false}
-HTTP=${3:-false}
+HTTP=${3:-true}
 RUN_TESTS=${4:-true}
 GENERATE=${5:-true}
 
