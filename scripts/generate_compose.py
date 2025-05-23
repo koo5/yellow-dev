@@ -207,7 +207,6 @@ def apply_host_network(compose_data, project_root, output_dir, instance_name, ht
         if service_name in ['server', 'messages']:
             service_config['environment']['MARIA_HOST'] = 'localhost'
             service_config['environment']['MESSAGES_HOST'] = 'localhost'
-            service_config['environment']['SERVER_URL'] = 'ws://localhost:8085'
     
     # Update settings paths in volumes
     for service_name in ['server', 'messages']:
@@ -344,7 +343,7 @@ def apply_hollow_mode(compose_data):
         
         service_config['environment']['HOLLOW'] = 'true'
 
-def apply_full_mode(compose_data, host_network=False):
+def apply_full_mode(compose_data, host_network=False, http_mode=False):
     """Apply full mode: remove bind mounts for source code and the common-init service."""
     print("Applying full mode: removing bind mounts and common-init service...")
     
@@ -412,9 +411,16 @@ def apply_full_mode(compose_data, host_network=False):
     playwright_dir = os.path.join(get_project_root(), 'playwright-container')
     os.makedirs(playwright_dir, exist_ok=True)
     
-    # Determine SERVER_HOST based on network mode
-    server_host = 'ws://localhost:8085' if host_network else 'ws://server:8085'
-    
+    # Determine URLs based on network mode and HTTP/HTTPS
+    http_protocol = 'http' if http_mode else 'https'
+    ws_protocol = 'ws' if http_mode else 'wss'
+    client_host = 'localhost' if host_network else 'client'
+    server_host = 'localhost' if host_network else 'server'
+    server_port = '8084' if http_mode else '8085'
+
+    playwright_client_url = f'{http_protocol}://{client_host}:3000'
+    playwright_server_url = f'{ws_protocol}://{server_host}:{server_port}'
+
     # Add the Playwright service to the compose file
     compose_data['services']['playwright'] = {
         'build': {
@@ -427,7 +433,8 @@ def apply_full_mode(compose_data, host_network=False):
         },
         'environment': {
             'CI': 'true',
-            'SERVER_URL': server_host
+            'PLAYWRIGHT_CLIENT_URL': playwright_client_url,
+            'PLAYWRIGHT_SERVER_URL': playwright_server_url
         },
         'network_mode': 'service:client',  # Share network with client container
         'volumes': [
@@ -495,7 +502,7 @@ def main():
         apply_hollow_mode(modified_compose)
         mode_suffix = "hollow"
     else:
-        apply_full_mode(modified_compose, host_network)
+        apply_full_mode(modified_compose, host_network, http_mode)
         mode_suffix = "full"
     
 

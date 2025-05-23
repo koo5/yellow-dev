@@ -8,8 +8,8 @@ set -euo pipefail
 HOLLOW=${1:-false}
 HOST_NETWORK=${2:-false}
 HTTP=${3:-false}
-RUN_TESTS=${3:-true}
-GENERATE=${4:-true}
+RUN_TESTS=${4:-true}
+GENERATE=${5:-true}
 
 if [ "$GENERATE" = "true" ]; then
   # Generate the customized docker-compose file with Dockerfiles
@@ -18,6 +18,9 @@ if [ "$GENERATE" = "true" ]; then
 fi
 
 
+export HOLLOW
+export HOST_NETWORK
+export HTTP
 INSTANTIATION=`./instantiation.sh`
 # The generated compose file
 COMPOSE_FILE="generated/docker-compose.${INSTANTIATION}.yml"
@@ -48,22 +51,23 @@ if [ "$RUN_TESTS" = "true" ]; then
   # Start services, run tests, then shut down
   set -x
   
-  docker compose -f $COMPOSE_FILE up --build --detach --remove-orphans
+  docker compose --project-directory . -f $COMPOSE_FILE up --build --detach --remove-orphans
 
   # Run tests with the Playwright container
   echo "Running tests with Playwright container..."
-  docker compose -f $COMPOSE_FILE run playwright
+  docker compose --project-directory . -f $COMPOSE_FILE run playwright
   TEST_EXIT_CODE=$?
   
   # Collect logs and shut down
   echo "Collecting logs and shutting down..."
-  docker compose -f $COMPOSE_FILE logs > docker-compose.log
-  docker compose -f $COMPOSE_FILE down
+  docker compose --project-directory . -f $COMPOSE_FILE logs > docker-compose.log
+  docker compose --project-directory . -f $COMPOSE_FILE down
   
   # Exit with the test exit code
   exit $TEST_EXIT_CODE
 else
   # Just run everything and keep it running
   echo "Running services without tests..."
-  docker compose -f $COMPOSE_FILE up --build --remove-orphans
+  set -x
+  docker compose --project-directory . -f $COMPOSE_FILE up --build --remove-orphans
 fi

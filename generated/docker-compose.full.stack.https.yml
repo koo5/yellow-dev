@@ -147,7 +147,8 @@ services:
         condition: service_healthy
     environment:
       CI: 'true'
-      SERVER_URL: ws://server:8085
+      PLAYWRIGHT_CLIENT_URL: https://client:3000
+      PLAYWRIGHT_SERVER_URL: wss://server:8085
     network_mode: service:client
     volumes:
     - ./test-results:/app/yellow-client/test-results
