@@ -1,16 +1,20 @@
 {
  "web": {
   "standalone": true,
-
-  "https_disabled": true,
-  "http_port": 8085,
-  "https_port": 4433,
+  "https_disabled": false,
+  "https_port": 8085,
+  "http_port": 8084,
 
   "certificates": [
    {
-    "domain": "{DOMAIN}",
-    "private": "/etc/letsencrypt/live/{DOMAIN}/privkey.pem",
-    "public": "/etc/letsencrypt/live/{DOMAIN}/cert.pem"
+    "domain": "localhost",
+    "private": "server.key",
+    "public": "server.crt"
+   },
+   {
+    "domain": "server",
+    "private": "server.key",
+    "public": "server.crt"
    }
   ],
   "socket_path": "server.sock",

@@ -95,7 +95,7 @@ services:
       - CI=${CI:-}
       - MARIA_HOST=${MARIA_HOST:-mariadb}
       - MESSAGES_HOST=${MESSAGES_HOST:-messages}
-      - SERVER_HOST=${SERVER_HOST:-server}
+      - SERVER_URL=${SERVER_URL:-ws://localhost:8085}
     depends_on:
       common-init: {condition: service_completed_successfully}
       server-init: {condition: service_completed_successfully}
@@ -106,8 +106,9 @@ services:
         condition: any
     ports:
       - "8085:8085"
+      - "8084:8084"
     healthcheck:
-      test: "curl -v --fail http://localhost:8085/health"
+      test: "curl -v --fail http://localhost:8084/health"
       start_interval: 1s #Docker Engine version 25.0 or later
       start_period: 140s
       interval: 10s
@@ -138,7 +139,7 @@ services:
       - CI=${CI:-}
       - MARIA_HOST=${MARIA_HOST:-mariadb}
       - MESSAGES_HOST=${MESSAGES_HOST:-messages}
-      - SERVER_HOST=${SERVER_HOST:-server}
+      - SERVER_URL=${SERVER_URL:-ws://localhost:8085}
     depends_on:
       common-init: {condition: service_completed_successfully}
       server-init: {condition: service_completed_successfully}

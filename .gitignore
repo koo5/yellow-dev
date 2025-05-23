@@ -3,3 +3,4 @@ node_modules
 .aider*
 .puzzle.history.json
 playwright-report
+certs

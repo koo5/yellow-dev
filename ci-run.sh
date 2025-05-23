@@ -7,30 +7,20 @@ set -euo pipefail
 # Parse arguments
 HOLLOW=${1:-false}
 HOST_NETWORK=${2:-false}
+HTTPS=${3:-false}
 RUN_TESTS=${3:-true}
 GENERATE=${4:-false}
 
 if [ "$GENERATE" = "true" ]; then
   # Generate the customized docker-compose file with Dockerfiles
   echo "Generating Dockerfiles and compose file..."
-  scripts/generate_compose.py --hollow=$HOLLOW --host-network=$HOST_NETWORK
+  scripts/generate_compose.py --hollow=$HOLLOW --host-network=$HOST_NETWORK --https=$HTTPS
 fi
 
-# Determine which compose file was generated
-if [ "$HOLLOW" = "true" ]; then
-  MODE="hollow"
-else
-  MODE="full"
-fi
 
-if [ "$HOST_NETWORK" = "true" ]; then
-  NETWORK="hostnet"
-else
-  NETWORK="stack"
-fi
-
+INSTANTIATION=`./instantiation.sh`
 # The generated compose file
-COMPOSE_FILE="docker-compose.${MODE}.${NETWORK}.yml"
+COMPOSE_FILE="docker-compose.${INSTANTIATION}.yml"
 echo "Using compose file: $COMPOSE_FILE"
 
 # Set environment variables
