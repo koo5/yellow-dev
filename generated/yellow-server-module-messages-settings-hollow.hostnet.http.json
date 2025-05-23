@@ -1,0 +1,49 @@
+{
+  "web": {
+    "http_port": 25001,
+    "allow_network": false
+  },
+  "database": {
+    "host": "localhost",
+    "port": 3306,
+    "user": "yellow_module_org_libersoft_messages",
+    "password": "password",
+    "name": "yellow_module_org_libersoft_messages"
+  },
+  "log": {
+    "level": "trace",
+    "stdout": {
+      "enabled": true,
+      "levels": [
+        {
+          "module-app-base:*": "info",
+          "*": "trace"
+        }
+      ]
+    },
+    "file": {
+      "enabled": true,
+      "name": "/var/log/yellow/messages.log",
+      "levels": [
+        {
+          "*": "debug"
+        }
+      ]
+    },
+    "database": {
+      "enabled": false,
+      "level": "debug"
+    },
+    "json": {
+      "enabled": false,
+      "name": "/var/log/yellow/messages.log.json",
+      "level": "debug"
+    },
+    "elasticsearch": {
+      "enabled": false
+    },
+    "node_child_process_elasticsearch": {
+      "enabled": false
+    }
+  }
+}

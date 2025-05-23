@@ -7,20 +7,20 @@ set -euo pipefail
 # Parse arguments
 HOLLOW=${1:-false}
 HOST_NETWORK=${2:-false}
-HTTPS=${3:-false}
+HTTP=${3:-false}
 RUN_TESTS=${3:-true}
 GENERATE=${4:-false}
 
 if [ "$GENERATE" = "true" ]; then
   # Generate the customized docker-compose file with Dockerfiles
   echo "Generating Dockerfiles and compose file..."
-  scripts/generate_compose.py --hollow=$HOLLOW --host-network=$HOST_NETWORK --https=$HTTPS
+  scripts/generate_compose.py --hollow=$HOLLOW --host-network=$HOST_NETWORK --http=$HTTP
 fi
 
 
 INSTANTIATION=`./instantiation.sh`
 # The generated compose file
-COMPOSE_FILE="docker-compose.${INSTANTIATION}.yml"
+COMPOSE_FILE="generated/docker-compose.${INSTANTIATION}.yml"
 echo "Using compose file: $COMPOSE_FILE"
 
 # Set environment variables
@@ -33,7 +33,7 @@ echo "Running with USER_ID=$USER_ID and GROUP_ID=$GROUP_ID"
 echo "Creating test result directories..."
 mkdir -p test-results playwright-report
 
-if [ "$HTTPS" = "true" ]; then
+if [ "$HTTP" = "false" ]; then
   # create a self-signed certificate if it doesn't exist
   if [ ! -f certs/server.crt ]; then
     echo "Generating self-signed certificate..."

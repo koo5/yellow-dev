@@ -12,10 +12,10 @@ else
   NETWORK="stack"
 fi
 
-if [ "$HTTPS" = "true" ]; then
-  PROTO="https"
-else
+if [ "$HTTP" = "true" ]; then
   PROTO="http"
+else
+  PROTO="https"
 fi
 
 echo "${MODE}.${NETWORK}.${PROTO}"

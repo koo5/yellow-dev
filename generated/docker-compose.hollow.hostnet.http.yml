@@ -1,0 +1,214 @@
+services:
+  admin:
+    build:
+      args:
+        GROUP_ID: ${GROUP_ID:-1000}
+        USER_ID: ${USER_ID:-1000}
+      context: ./yellow-admin/
+      dockerfile: Dockerfile_hollow
+    depends_on:
+      server:
+        condition: service_healthy
+    deploy:
+      restart_policy:
+        condition: any
+    environment:
+      HOLLOW: 'true'
+    healthcheck:
+      interval: 30s
+      retries: 30
+      start_interval: 1s
+      start_period: 140s
+      test: curl -v --fail http://localhost:4000/#health
+      timeout: 20s
+    network_mode: host
+    ports:
+    - 4000:4000
+    volumes:
+    - ./yellow-admin:/app/app
+    - ./yellow-server-common:/app/yellow-server-common
+  client:
+    build:
+      args:
+        GROUP_ID: ${GROUP_ID:-1000}
+        USER_ID: ${USER_ID:-1000}
+      context: ./yellow-client/
+      dockerfile: Dockerfile_hollow
+    deploy:
+      restart_policy:
+        condition: any
+    environment:
+      COMMAND: ${CLIENT_COMMAND:-./start-docker-dev.sh}
+      HOLLOW: 'true'
+      VITE_YELLOW_CLIENT_DEBUG: 'true'
+      VITE_YELLOW_CLIENT_DEFAULT_ACCOUNTS: ${VITE_YELLOW_CLIENT_DEFAULT_ACCOUNTS:-}
+      VITE_YELLOW_CLIENT_PING_INTERVAL: '10000'
+      VITE_YELLOW_CLIENT_WALLET_PROVIDER_RECONNECT_INTERVAL: '1000000'
+    healthcheck:
+      interval: 30s
+      retries: 30
+      start_interval: 1s
+      start_period: 140s
+      test: curl -v --fail http://localhost:3000/#health
+      timeout: 20s
+    network_mode: host
+    ports:
+    - 3000:3000
+    volumes:
+    - ./yellow-client:/app/app
+  common-init:
+    build:
+      args:
+        GROUP_ID: ${GROUP_ID:-1000}
+        USER_ID: ${USER_ID:-1000}
+      context: ./yellow-server-common/
+    command:
+    - sh
+    - -c
+    - cd /app/yellow-server-common; ~/.bun/bin/bun i --frozen-lockfile
+    entrypoint: []
+    environment:
+      HOLLOW: 'true'
+    network_mode: host
+    volumes:
+    - ./yellow-server-common:/app/yellow-server-common
+  mariadb:
+    container_name: mariadb
+    depends_on:
+    - mariadb-init
+    deploy:
+      restart_policy:
+        condition: any
+    environment:
+      HOLLOW: 'true'
+      MYSQL_ROOT_PASSWORD: password
+      TMPDIR: /mariadb_tmp
+    healthcheck:
+      interval: 10s
+      retries: 30
+      start_interval: 1s
+      start_period: 140s
+      test: mariadb --protocol=tcp --host=localhost --user=workaround --password=whyistherenoping
+        --force 2>&1 | grep "Access denied for user"
+      timeout: 20s
+    image: mariadb:10.5
+    network_mode: host
+    restart: always
+    volumes:
+    - mariadb:/var/lib/mysql
+    - mariadb_tmp:/mariadb_tmp
+  mariadb-init:
+    command:
+    - sh
+    - -c
+    - mkdir -p /mariadb_tmp && chmod 1777 /mariadb_tmp
+    container_name: mariadb-init
+    entrypoint: []
+    environment:
+      HOLLOW: 'true'
+    image: alpine
+    network_mode: host
+    volumes:
+    - mariadb_tmp:/mariadb_tmp
+  messages:
+    build:
+      args:
+        GROUP_ID: ${GROUP_ID:-1000}
+        USER_ID: ${USER_ID:-1000}
+      context: ./yellow-server-module-messages/
+      dockerfile: Dockerfile_hollow
+    depends_on:
+      common-init:
+        condition: service_completed_successfully
+      mariadb:
+        condition: service_healthy
+      server-init:
+        condition: service_completed_successfully
+    deploy:
+      restart_policy:
+        condition: any
+    environment:
+      CI: ${CI:-}
+      HOLLOW: 'true'
+      MARIA_HOST: localhost
+      MESSAGES_HOST: localhost
+      SERVER_URL: ws://localhost:8085
+      VITE_YELLOW_SETTINGS_PATH: /app/settings.json
+    healthcheck:
+      interval: 30s
+      retries: 30
+      start_interval: 1s
+      start_period: 140s
+      test: curl -v --fail http://localhost:25001/health
+      timeout: 20s
+    network_mode: host
+    ports:
+    - 25001:25001
+    volumes:
+    - server_logs:/var/log/yellow
+    - ./yellow-server-module-messages:/app/app
+    - ./yellow-server-common:/app/yellow-server-common
+    - ./generated/yellow-server-module-messages-settings-hollow.hostnet.http.json:/app/settings.json
+  server:
+    build:
+      args:
+        GROUP_ID: ${GROUP_ID:-1000}
+        USER_ID: ${USER_ID:-1000}
+      context: ./yellow-server/
+      dockerfile: Dockerfile_hollow
+    depends_on:
+      common-init:
+        condition: service_completed_successfully
+      mariadb:
+        condition: service_healthy
+      server-init:
+        condition: service_completed_successfully
+    deploy:
+      restart_policy:
+        condition: any
+    environment:
+      CI: ${CI:-}
+      HOLLOW: 'true'
+      MARIA_HOST: localhost
+      MESSAGES_HOST: localhost
+      SERVER_URL: ws://localhost:8085
+      VITE_YELLOW_SETTINGS_PATH: /app/settings.json
+    healthcheck:
+      interval: 10s
+      retries: 30
+      start_interval: 1s
+      start_period: 140s
+      test: curl -v --fail http://localhost:8084/health
+      timeout: 20s
+    network_mode: host
+    ports:
+    - 8085:8085
+    - 8084:8084
+    volumes:
+    - server_tmp:/tmp
+    - server_logs:/var/log/yellow
+    - ./yellow-server:/app/app
+    - ./yellow-server-common:/app/yellow-server-common
+    - ./generated/yellow-server-settings-hollow.hostnet.http.json:/app/settings.json
+  server-init:
+    command:
+    - sh
+    - -c
+    - chown -R ${USER_ID:-1000}:${GROUP_ID:-1000} /tmp/yellow; mkdir -p /tmp/yellow;
+      chown -R ${USER_ID:-1000}:${GROUP_ID:-1000} /tmp/yellow ;chmod 1777 /tmp/yellow;
+      echo ok; mkdir -p /var/log/yellow; chown -R ${USER_ID:-1000}:${GROUP_ID:-1000}
+      /var/log/yellow ;chmod 1777 /var/log/yellow
+    entrypoint: []
+    environment:
+      GROUP_ID: ${GROUP_ID:-1000}
+      HOLLOW: 'true'
+      USER_ID: ${USER_ID:-1000}
+    image: alpine
+    network_mode: host
+    volumes:
+    - server_tmp:/tmp
+volumes:
+  mariadb: null
+  mariadb_tmp: null
+  server_logs: null
+  server_tmp: null

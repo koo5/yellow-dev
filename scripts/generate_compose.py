@@ -2,7 +2,7 @@
 """
 Script to generate customized docker-compose files and Dockerfiles.
 Usage:
-    python3 generate_compose.py --hollow=true|false --host-network=true|false
+    python3 generate_compose.py --hollow=true|false --host-network=true|false --http=true|false
 """
 
 import argparse
@@ -20,8 +20,8 @@ def parse_args():
                         help='Use hollow mode (bind-mount app sources) or full mode (default: true)')
     parser.add_argument('--host-network', type=str, choices=['true', 'false'], default='false',
                         help='Use host network mode (default: false)')
-    parser.add_argument('--https', type=str, choices=['true', 'false'], default='true',
-                        help='Use HTTPS protocol (default: false)')
+    parser.add_argument('--http', type=str, choices=['true', 'false'], default='false',
+                        help='Use HTTP protocol (default: false)')
     return parser.parse_args()
 
 def get_project_root():
@@ -41,14 +41,14 @@ def prepare_output_dir(project_root):
     os.makedirs(output_dir, exist_ok=True)
     return output_dir
 
-def get_instance_name(project_root, hollow_mode, host_network, https=False):
+def get_instance_name(project_root, hollow_mode, host_network, http=False):
     """Generate instance name using instantiation.sh script."""
     import subprocess
     
     env = os.environ.copy()
     env['HOLLOW'] = 'true' if hollow_mode else 'false'
     env['HOST_NETWORK'] = 'true' if host_network else 'false'
-    env['HTTPS'] = 'true' if https else 'false'
+    env['HTTP'] = 'true' if http else 'false'
     
     instantiation_script = os.path.join(project_root, 'instantiation.sh')
     result = subprocess.run(['bash', instantiation_script], 
@@ -60,7 +60,7 @@ def get_instance_name(project_root, hollow_mode, host_network, https=False):
         # Fallback to manual generation if script fails
         mode = "hollow" if hollow_mode else "full"
         network = "hostnet" if host_network else "stack"
-        proto = "https" if https else "http"
+        proto = "http" if http else "https"
         return f"{mode}.{network}.{proto}"
 
 def generate_hollow_dockerfile(project_root, context_path):
@@ -152,7 +152,7 @@ def process_service_dockerfiles(compose_data, project_root, hollow):
             else:
                 service_config['build']['dockerfile'] = f"Dockerfile_{'hollow' if hollow else 'full'}"
 
-def apply_host_network(compose_data, project_root, output_dir, instance_name, https_mode=False):
+def apply_host_network(compose_data, project_root, output_dir, instance_name, http_mode=False):
     """Apply host network mode to the compose file."""
     print("Applying host network mode...")
     
@@ -165,7 +165,7 @@ def apply_host_network(compose_data, project_root, output_dir, instance_name, ht
     server_settings['database']['host'] = 'localhost'
     
     # Configure HTTPS settings
-    server_settings['web']['https_disabled'] = not https_mode
+    server_settings['web']['https_disabled'] = http_mode
     
     server_settings_modified_path = os.path.join(output_dir, f'yellow-server-settings-{instance_name}.json')
     with open(server_settings_modified_path, 'w') as f:
@@ -216,13 +216,15 @@ def apply_host_network(compose_data, project_root, output_dir, instance_name, ht
             for i, volume in enumerate(volumes):
                 if isinstance(volume, str):
                     if 'template-yellow-server-settings.json' in volume:
-                        volumes[i] = f"{server_settings_modified_path}:/app/settings.json"
+                        # Use relative path from compose file location
+                        volumes[i] = f"./generated/yellow-server-settings-{instance_name}.json:/app/settings.json"
                     elif 'template-yellow-server-module-messages-settings.json' in volume:
-                        volumes[i] = f"{messages_settings_modified_path}:/app/settings.json"
+                        # Use relative path from compose file location
+                        volumes[i] = f"./generated/yellow-server-module-messages-settings-{instance_name}.json:/app/settings.json"
     
     return server_settings_modified_path, messages_settings_modified_path
 
-def generate_stack_settings(project_root, output_dir, instance_name, https_mode=False):
+def generate_stack_settings(project_root, output_dir, instance_name, http_mode=False):
     """Generate settings files for stack network mode."""
     # Create server settings file for stack network
     server_settings_path = os.path.join(project_root, 'template-yellow-server-settings.json')
@@ -231,7 +233,7 @@ def generate_stack_settings(project_root, output_dir, instance_name, https_mode=
     
     # Keep default database host (mariadb)
     # Configure HTTPS settings
-    server_settings['web']['https_disabled'] = not https_mode
+    server_settings['web']['https_disabled'] = http_mode
     
     server_settings_modified_path = os.path.join(output_dir, f'yellow-server-settings-{instance_name}.json')
     with open(server_settings_modified_path, 'w') as f:
@@ -249,9 +251,9 @@ def generate_stack_settings(project_root, output_dir, instance_name, https_mode=
     
     return server_settings_modified_path, messages_settings_modified_path
 
-def apply_https_certificates(compose_data, https_mode):
+def apply_https_certificates(compose_data, http_mode):
     """Add certificate bind-mounts for HTTPS mode."""
-    if not https_mode:
+    if http_mode:
         return
     
     print("Adding HTTPS certificate bind-mounts...")
@@ -276,13 +278,13 @@ def apply_https_certificates(compose_data, https_mode):
                     service_config['volumes'].append(cert_volume)
                     print(f"Added certificate bind-mount {cert_volume} to service {service_name}")
 
-def apply_stack_network(compose_data, project_root, output_dir, instance_name, https_mode=False):
+def apply_stack_network(compose_data, project_root, output_dir, instance_name, http_mode=False):
     """Apply stack network mode (default) to the compose file."""
     print("Applying stack network mode...")
     
     # Generate settings files for stack network
     server_settings_modified_path, messages_settings_modified_path = generate_stack_settings(
-        project_root, output_dir, instance_name, https_mode
+        project_root, output_dir, instance_name, http_mode
     )
     
     # Ensure networks section exists
@@ -323,9 +325,11 @@ def apply_stack_network(compose_data, project_root, output_dir, instance_name, h
             for i, volume in enumerate(volumes):
                 if isinstance(volume, str):
                     if 'template-yellow-server-settings.json' in volume:
-                        volumes[i] = f"{server_settings_modified_path}:/app/settings.json"
+                        # Use relative path from compose file location
+                        volumes[i] = f"./generated/yellow-server-settings-{instance_name}.json:/app/settings.json"
                     elif 'template-yellow-server-module-messages-settings.json' in volume:
-                        volumes[i] = f"{messages_settings_modified_path}:/app/settings.json"
+                        # Use relative path from compose file location
+                        volumes[i] = f"./generated/yellow-server-module-messages-settings-{instance_name}.json:/app/settings.json"
     
     return server_settings_modified_path, messages_settings_modified_path
 
@@ -444,6 +448,7 @@ def remove_playwright_container(compose_data):
         del compose_data['services']['playwright']
     return compose_data
 
+
 def main():
     """Main function to generate customized docker-compose files."""
     args = parse_args()
@@ -451,18 +456,18 @@ def main():
     
     hollow_mode = args.hollow.lower() == 'true'
     host_network = args.host_network.lower() == 'true'
-    https_mode = args.https.lower() == 'true'
+    http_mode = args.http.lower() == 'true'
     
     print(f"Generating customized docker-compose file...")
     print(f"Hollow mode: {hollow_mode}")
     print(f"Host network: {host_network}")
-    print(f"HTTPS mode: {https_mode}")
+    print(f"HTTP mode: {http_mode}")
     
     # Prepare output directory
     output_dir = prepare_output_dir(project_root)
     
     # Generate instance name using instantiation.sh
-    instance_name = get_instance_name(project_root, hollow_mode, host_network, https_mode)
+    instance_name = get_instance_name(project_root, hollow_mode, host_network, http_mode)
     print(f"Instance name: {instance_name}")
     
     # Load docker-compose template
@@ -476,14 +481,14 @@ def main():
     
     # Apply network mode
     if host_network:
-        apply_host_network(modified_compose, project_root, output_dir, instance_name, https_mode)
+        apply_host_network(modified_compose, project_root, output_dir, instance_name, http_mode)
         network_suffix = "hostnet"
     else:
-        apply_stack_network(modified_compose, project_root, output_dir, instance_name, https_mode)
+        apply_stack_network(modified_compose, project_root, output_dir, instance_name, http_mode)
         network_suffix = "stack"
     
     # Apply HTTPS certificates if enabled
-    apply_https_certificates(modified_compose, https_mode)
+    apply_https_certificates(modified_compose, http_mode)
     
     # Apply hollow/full mode
     if hollow_mode:
@@ -493,8 +498,9 @@ def main():
         apply_full_mode(modified_compose, host_network)
         mode_suffix = "full"
     
+
     # Generate the output filename
-    output_filename = f"docker-compose-{instance_name}.yml"
+    output_filename = f"docker-compose.{instance_name}.yml"
     output_path = os.path.join(output_dir, output_filename)
     
     # Write the modified compose file
@@ -510,7 +516,7 @@ def main():
         remove_playwright_container(no_playwright_compose)
         
         # Write docker-compose.yml without playwright to generated directory
-        no_playwright_filename = f"docker-compose-{instance_name}-no-playwright.yml"
+        no_playwright_filename = f"docker-compose.{instance_name}-no-playwright.yml"
         no_playwright_path = os.path.join(output_dir, no_playwright_filename)
         with open(no_playwright_path, 'w') as f:
             yaml.dump(no_playwright_compose, f, default_flow_style=False)
