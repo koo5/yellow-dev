@@ -123,6 +123,8 @@ services:
     depends_on:
       mariadb:
         condition: service_healthy
+      server-init:
+        condition: service_completed_successfully
     deploy:
       restart_policy:
         condition: any
@@ -211,7 +213,9 @@ services:
     - sh
     - -c
     - chown -R ${USER_ID:-1000}:${GROUP_ID:-1000} /tmp; mkdir -p /tmp/yellow; chown
-      -R ${USER_ID:-1000}:${GROUP_ID:-1000} /tmp/yellow ;chmod 1777 /tmp/yellow
+      -R ${USER_ID:-1000}:${GROUP_ID:-1000} /tmp/yellow ;chmod 1777 /tmp/yellow; echo
+      ok; mkdir -p /var/log/yellow; chown -R ${USER_ID:-1000}:${GROUP_ID:-1000} /var/log/yellow
+      ;chmod 1777 /var/log/yellow
     entrypoint: []
     environment:
       GROUP_ID: ${GROUP_ID:-1000}
