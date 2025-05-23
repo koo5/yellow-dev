@@ -1,4 +1,4 @@
-name: E2E Tests Without BuildX
+name: E2E Tests With BuildX Caching
 
 # Make this workflow reusable
 on:
@@ -23,7 +23,6 @@ jobs:
     - name: Print working directory
       run: |
         pwd
-        ls -la
 
     # Conditionally checkout the client repo if specified
     - name: Checkout custom client code
@@ -41,29 +40,35 @@ jobs:
         ref: master
         path: yellow-dev
         submodules: recursive
+
     
     # Replace yellow-client code if a custom client was checked out
     - name: Replace yellow-client code with custom source
       if: inputs.client_repo != ''
       run: |
-        rm -rf yellow-dev/yellow-client
-        cp -r source-client yellow-dev/yellow-client
+        rm -rf yellow-dev/yellow-client && echo "Removed old yellow-client code"
+        cp -r source-client yellow-dev/yellow-client && echo "Replaced yellow-client code with custom source"
     
-    - name: Set up Python
-      uses: actions/setup-python@v4
+#    - name: Set up Python
+#      uses: actions/setup-python@v4
+#      with:
+#        python-version: '3.10'
+#
+#    - name: Install Python dependencies
+#      run: |
+#        python -m pip install --upgrade pip
+#        pip install requests
+#        if [ -f yellow-dev/requirements.txt ]; then
+#          pip install -r yellow-dev/requirements.txt
+#        fi
+
+    # Set up Docker Buildx with cache support
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
       with:
-        python-version: '3.10'
-    
-    - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install requests
-    
-    - name: Set up Bun
-      uses: oven-sh/setup-bun@v1
-      with:
-        bun-version: latest
-    
+        driver: docker-container
+        platforms: linux/amd64
+
     # Install Docker Compose v2
     - name: Install Docker Compose
       run: |
@@ -77,55 +82,42 @@ jobs:
         
         # Verify installation
         docker compose version
-        
-        # Create executable 'docker-compose' script in PATH for backward compatibility
-        sudo tee /usr/local/bin/docker-compose > /dev/null << 'EOF'
-        #!/bin/bash
-        docker compose "$@"
-        EOF
-        sudo chmod +x /usr/local/bin/docker-compose
-        
-        # Verify docker-compose script works
-        docker-compose version
 
-    - name: Install playwright
+    # Configure Docker Buildx to use cache with better scoping
+    - name: Configure Docker Buildx Cache
       run: |
-        cd yellow-dev/yellow-client
-        bun install
-        bun x playwright install --with-deps
-    
-    - name: Install Fish Shell and MariaDB Client
+        # Create a custom buildx builder with cache configuration
+        docker buildx create --name ci-builder --driver docker-container --use
+        docker buildx inspect --bootstrap
+        
+        # Configure optimized BUILDX_CACHE with scoping for better cache hits
+        echo "BUILDX_CACHE=type=gha,mode=max,scope=${{ github.ref_name }}-${{ github.workflow }}" >> $GITHUB_ENV
+        echo "BUILDX_CACHE_FALLBACK=type=gha,mode=max,scope=master-${{ github.workflow }}" >> $GITHUB_ENV
+        echo "DOCKER_BUILDKIT=1" >> $GITHUB_ENV
+
+    - name: Run E2E Tests
       run: |
-        sudo apt-get update
-        sudo apt-get install -y fish mariadb-client
-    
-    - name: Run E2E Tests without buildx
-      run: |
-        ls -la
+        pwd
+        ls -l
         cd yellow-dev
-        ls -la
-        
-        # Verify script exists
-        if [ ! -f "scripts/run_compose_and_test.py" ]; then
-          echo "ERROR: Test script not found at expected location scripts/run_compose_and_test.py"
-          find . -name "run_compose_and_test.py"
-          exit 1
-        fi
+        ls -l
+        # Run CI script with full mode and stack network
+        ./ci-run.sh false false true
 
-        # Check if docker-compose.ci.yml exists
-        if [ ! -f "docker-compose.ci.yml" ]; then
-          echo "Warning: docker-compose.ci.yml not found."
-        fi
-        
-        # Check for Dockerfiles in service contexts
-        echo "Checking for Dockerfiles in service contexts..."
-        for dir in yellow-server-common yellow-server yellow-client yellow-admin yellow-server-module-messages; do
-          if [ -f "$dir/Dockerfile" ]; then
-            echo "✅ $dir/Dockerfile exists"
-          else
-            echo "❌ $dir/Dockerfile is missing"  
-          fi
-        done
-        
-        CI=true \
-        python scripts/run_compose_and_test.py
+    - name: Upload Playwright Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-results-${{ github.run_id }}
+        path: |
+          yellow-dev/test-results/
+          yellow-dev/playwright-report/
+        retention-days: 30
+
+    - name: Upload Docker Logs
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: docker-logs-${{ github.run_id }}
+        path: yellow-dev/docker-compose.log
+        retention-days: 7

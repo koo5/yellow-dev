@@ -1,0 +1,225 @@
+
+services:
+
+  mariadb-init:
+    image: alpine
+    container_name: mariadb-init
+    networks:
+      - stack-network
+    volumes:
+      - mariadb_tmp:/mariadb_tmp
+    command: ["sh", "-c", "mkdir -p /mariadb_tmp && chmod 1777 /mariadb_tmp"]
+    entrypoint: []
+
+
+  mariadb:
+    image: mariadb:10.5
+    container_name: mariadb
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      TMPDIR: /mariadb_tmp
+    volumes:
+      - mariadb:/var/lib/mysql
+      - mariadb_tmp:/mariadb_tmp
+    depends_on:
+      - mariadb-init
+    deploy:
+      restart_policy:
+        condition: any
+    networks:
+      - stack-network
+    healthcheck:
+      #test: "/bin/true" mysql  2>&1 | grep connect something ??
+      test: "mariadb --protocol=tcp --host=localhost --user=workaround --password=whyistherenoping --force 2>&1 | grep -v \"Can't connect to server\""
+      start_interval: 1s #Docker Engine version 25.0 or later
+      interval: 10s
+      timeout: 20s
+      retries: 30
+
+
+  common-init:
+    networks:
+      - stack-network
+    build:
+      context: ./yellow-server-common/
+      args:
+        USER_ID: "${USER_ID:-1000}"
+        GROUP_ID: "${GROUP_ID:-1000}"
+      cache_from:
+        - "${BUILDX_CACHE:-}"
+        - "${BUILDX_CACHE_FALLBACK:-}"
+      cache_to:
+        - "${BUILDX_CACHE:-}"
+    volumes:
+      - ./yellow-server-common:/app/yellow-server-common
+    command: ["sh", "-c", "cd /app/yellow-server-common; ~/.bun/bin/bun i --frozen-lockfile"]
+    entrypoint: []
+
+
+  server-init:
+    image: alpine
+    networks:
+      - stack-network
+    volumes:
+      - server_tmp:/tmp
+    command: ["sh", "-c", "chown -R USER_ID:GROUP_ID /tmp; mkdir -p /tmp ;chmod 1777 /tmp"]
+    entrypoint: []
+
+
+  server:
+    networks:
+      - stack-network
+    build:
+      context: ./yellow-server/
+      args:
+        USER_ID: "${USER_ID:-1000}"
+        GROUP_ID: "${GROUP_ID:-1000}"
+      cache_from:
+        - "${BUILDX_CACHE:-}"
+        - "${BUILDX_CACHE_FALLBACK:-}"
+      cache_to:
+        - "${BUILDX_CACHE:-}"
+    volumes:
+      - server_tmp:/tmp
+      - server_logs:/var/log/yellow
+      - ./yellow-server:/app/app
+      - ./yellow-server-common:/app/yellow-server-common
+      - ./yellow-server-settings.json:/app/settings.json
+    environment:
+      - VITE_YELLOW_SETTINGS_PATH=/app/settings.json
+      - CI=${CI:-}
+      - MARIA_HOST=${MARIA_HOST:-mariadb}
+      - MESSAGES_HOST=${MESSAGES_HOST:-messages}
+      - SERVER_HOST=${SERVER_HOST:-server}
+    depends_on:
+      common-init: {condition: service_completed_successfully}
+      server-init: {condition: service_completed_successfully}
+      mariadb: {condition: service_healthy}
+      #messages: {condition: service_healthy}
+    deploy:
+      restart_policy:
+        condition: any
+    ports:
+      - "8085:8085"
+    healthcheck:
+      test: "curl -v --fail http://localhost:8085/health"
+      start_interval: 1s #Docker Engine version 25.0 or later
+      interval: 10s
+      timeout: 20s
+      retries: 30
+
+
+  messages:
+    networks:
+      - stack-network
+    build:
+      context: ./yellow-server-module-messages/
+      args:
+        USER_ID: "${USER_ID:-1000}"
+        GROUP_ID: "${GROUP_ID:-1000}"
+      cache_from:
+        - "${BUILDX_CACHE:-}"
+        - "${BUILDX_CACHE_FALLBACK:-}"
+      cache_to:
+        - "${BUILDX_CACHE:-}"
+    volumes:
+      - server_logs:/var/log/yellow
+      - ./yellow-server-module-messages:/app/app
+      - ./yellow-server-common:/app/yellow-server-common
+      - ./yellow-server-module-messages-settings.json:/app/settings.json
+    environment:
+      - VITE_YELLOW_SETTINGS_PATH=/app/settings.json
+      - CI=${CI:-}
+      - MARIA_HOST=${MARIA_HOST:-mariadb}
+      - MESSAGES_HOST=${MESSAGES_HOST:-messages}
+      - SERVER_HOST=${SERVER_HOST:-server}
+    depends_on:
+      common-init: {condition: service_completed_successfully}
+      mariadb: {condition: service_healthy}
+    deploy:
+      restart_policy:
+        condition: any
+    ports:
+      - "25001:25001"
+    healthcheck:
+      test: "curl -v --fail http://localhost:25001/health"
+      start_interval: 1s
+      interval: 30s
+      timeout: 20s
+      retries: 30
+
+
+  admin:
+    networks:
+      - stack-network
+    build:
+      context: ./yellow-admin/
+      args:
+        USER_ID: "${USER_ID:-1000}"
+        GROUP_ID: "${GROUP_ID:-1000}"
+      cache_from:
+        - "${BUILDX_CACHE:-}"
+        - "${BUILDX_CACHE_FALLBACK:-}"
+      cache_to:
+        - "${BUILDX_CACHE:-}"
+    volumes:
+      - ./yellow-admin:/app/app
+      - ./yellow-server-common:/app/yellow-server-common
+    depends_on: {server: {condition: service_healthy}}
+    deploy:
+      restart_policy:
+        condition: any
+    healthcheck:
+      test: "curl -v --fail http://localhost:4000/#health"
+      start_interval: 1s
+      interval: 30s
+      timeout: 20s
+      retries: 30
+    ports:
+      - "4000:4000"
+
+
+  client:
+    networks:
+      - stack-network
+    build:
+      context: ./yellow-client/
+      args:
+        USER_ID: "${USER_ID:-1000}"
+        GROUP_ID: "${GROUP_ID:-1000}"
+      cache_from:
+        - "${BUILDX_CACHE:-}"
+        - "${BUILDX_CACHE_FALLBACK:-}"
+      cache_to:
+        - "${BUILDX_CACHE:-}"
+    volumes:
+      - ./yellow-client:/app/app
+    environment:
+      - VITE_YELLOW_CLIENT_PING_INTERVAL=10000
+      - VITE_YELLOW_CLIENT_WALLET_PROVIDER_RECONNECT_INTERVAL=1000000
+      - VITE_YELLOW_CLIENT_DEFAULT_ACCOUNTS=${VITE_YELLOW_CLIENT_DEFAULT_ACCOUNTS:-}
+      - VITE_YELLOW_CLIENT_DEBUG=true
+      - COMMAND="${CLIENT_COMMAND:-./start-docker-dev.sh}"
+    ports:
+      - "3000:3000"
+    deploy:
+      restart_policy:
+        condition: any
+    healthcheck:
+      test: "curl -v --fail http://localhost:3000/#health"
+      start_interval: 1s
+      interval: 30s
+      timeout: 20s
+      retries: 30
+
+volumes:
+  mariadb:
+  mariadb_tmp:
+  server_logs:
+  server_tmp:
+
+networks:
+  stack-network:
+    driver: bridge
+

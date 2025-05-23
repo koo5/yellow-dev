@@ -143,6 +143,23 @@ services:
     volumes:
     - server_logs:/var/log/yellow
     - ./yellow-server-module-messages-settings.json:/app/settings.json
+  playwright:
+    build:
+      args:
+        GROUP_ID: ${GROUP_ID:-1000}
+        USER_ID: ${USER_ID:-1000}
+      context: .
+      dockerfile: ./playwright-container/Dockerfile
+    depends_on:
+      client:
+        condition: service_healthy
+    environment:
+      CI: 'true'
+      SERVER_HOST: server
+    network_mode: service:client
+    volumes:
+    - ./test-results:/app/yellow-client/test-results
+    - ./playwright-report:/app/yellow-client/playwright-report
   server:
     build:
       args:
