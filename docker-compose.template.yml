@@ -33,6 +33,7 @@ services:
       #test: "/bin/true" mysql  2>&1 | grep connect something ??
       test: "mariadb --protocol=tcp --host=localhost --user=workaround --password=whyistherenoping --force 2>&1 | grep -v \"Can't connect to server\""
       start_interval: 1s #Docker Engine version 25.0 or later
+      start_period: 140s
       interval: 10s
       timeout: 20s
       retries: 30
@@ -105,6 +106,7 @@ services:
     healthcheck:
       test: "curl -v --fail http://localhost:8085/health"
       start_interval: 1s #Docker Engine version 25.0 or later
+      start_period: 140s
       interval: 10s
       timeout: 20s
       retries: 30
@@ -145,6 +147,7 @@ services:
     healthcheck:
       test: "curl -v --fail http://localhost:25001/health"
       start_interval: 1s
+      start_period: 140s
       interval: 30s
       timeout: 20s
       retries: 30
@@ -173,6 +176,7 @@ services:
     healthcheck:
       test: "curl -v --fail http://localhost:4000/#health"
       start_interval: 1s
+      start_period: 140s
       interval: 30s
       timeout: 20s
       retries: 30
@@ -209,6 +213,7 @@ services:
     healthcheck:
       test: "curl -v --fail http://localhost:3000/#health"
       start_interval: 1s
+      start_period: 140s
       interval: 30s
       timeout: 20s
       retries: 30

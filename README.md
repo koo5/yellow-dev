@@ -12,6 +12,8 @@ For development (hollow mode with bind mounts):
 # Generate the development configuration
 python scripts/generate_compose.py --hollow=true --host-network=false
 
+docker volume rm yellow-dev_mariadb yellow-dev_mariadb_tmp yellow-dev_server_logs yellow-dev_server_tmp
+
 # Run the stack (passing your user ID and group ID to containers)
 USER_ID=$(id -u) GROUP_ID=$(id -g) docker compose -f docker-compose.hollow.stack.yml up --build
 ```
