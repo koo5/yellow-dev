@@ -210,7 +210,8 @@ services:
     command:
     - sh
     - -c
-    - chown -R $USER_ID:$GROUP_ID /tmp; mkdir -p /tmp ;chmod 1777 /tmp
+    - chown -R ${USER_ID:-1000}:${GROUP_ID:-1000} /tmp; mkdir -p /tmp ;chmod 1777
+      /tmp
     entrypoint: []
     environment:
       GROUP_ID: ${GROUP_ID:-1000}
