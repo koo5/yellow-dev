@@ -148,6 +148,8 @@ services:
       PLAYWRIGHT_CLIENT_URL: http://client:3000
       PLAYWRIGHT_SERVER_URL: ws://server:8084
     network_mode: service:client
+    profiles:
+    - test
     volumes:
     - ./test-results:/app/yellow-client/test-results
     - ./playwright-report:/app/yellow-client/playwright-report

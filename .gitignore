@@ -4,3 +4,4 @@ node_modules
 .puzzle.history.json
 playwright-report
 certs
+docker-compose.log

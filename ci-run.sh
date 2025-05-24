@@ -57,7 +57,7 @@ if [ "$RUN_TESTS" = "true" ]; then
   echo "Running tests with Playwright container..."
   docker compose --project-directory . -f $COMPOSE_FILE run playwright
   TEST_EXIT_CODE=$?
-  
+
   # Collect logs and shut down
   echo "Collecting logs and shutting down..."
   docker compose --project-directory . -f $COMPOSE_FILE logs > docker-compose.log

@@ -423,6 +423,7 @@ def apply_full_mode(compose_data, host_network=False, http_mode=False):
 
     # Add the Playwright service to the compose file
     compose_data['services']['playwright'] = {
+        'profiles': ['test'],  # Only start with --profile test or when explicitly run
         'build': {
             'context': '.',
             'dockerfile': './playwright-container/Dockerfile',

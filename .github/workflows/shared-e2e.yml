@@ -102,7 +102,7 @@ jobs:
         cd yellow-dev
         ls -l
         # Run CI script with full mode and stack network
-        ./ci-run.sh false false true
+        ./ci-run.sh
 
     - name: Upload Playwright Test Results
       uses: actions/upload-artifact@v4
