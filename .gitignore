@@ -6,3 +6,4 @@ playwright-report
 certs
 docker-compose.log
 ppp*
+test-results

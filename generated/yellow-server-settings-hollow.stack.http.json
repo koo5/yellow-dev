@@ -1,0 +1,89 @@
+{
+  "web": {
+    "standalone": true,
+    "https_disabled": true,
+    "https_port": 8085,
+    "http_port": 8084,
+    "certificates": [
+      {
+        "domain": "localhost",
+        "private": "/app/certs/server.key",
+        "public": "/app/certs/server.crt"
+      },
+      {
+        "domain": "server",
+        "private": "/app/certs/server.key",
+        "public": "/app/certs/server.crt"
+      }
+    ],
+    "socket_path": "server.sock",
+    "web_paths": [
+      {
+        "route": "/",
+        "path": "www"
+      }
+    ]
+  },
+  "database": {
+    "host": "mariadb",
+    "port": 3306,
+    "user": "username",
+    "password": "password",
+    "name": "yellow"
+  },
+  "log": {
+    "level": "trace",
+    "stdout": {
+      "enabled": true,
+      "levels": [
+        {
+          "module": "debug"
+        },
+        {
+          "modules": "debug"
+        },
+        {
+          "auth": "trace"
+        },
+        {
+          "webserver": "debug"
+        },
+        {
+          "healthcheck": "warning"
+        },
+        {
+          "*": "debug"
+        }
+      ]
+    },
+    "file": {
+      "enabled": false,
+      "name": "/var/log/yellow/server.log",
+      "levels": [
+        {
+          "*": "debug"
+        }
+      ]
+    },
+    "database": {
+      "enabled": false,
+      "level": "debug"
+    },
+    "json": {
+      "enabled": true,
+      "name": "/var/log/yellow/server-json.log",
+      "level": "debug"
+    },
+    "elasticsearch": {
+      "enabled": false
+    },
+    "node_child_process_elasticsearch": {
+      "enabled": false
+    }
+  },
+  "session": {
+    "admin": 600,
+    "user": 2592000,
+    "cleaner": 600
+  }
+}

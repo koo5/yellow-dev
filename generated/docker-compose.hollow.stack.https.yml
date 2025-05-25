@@ -8,7 +8,7 @@ services:
         GROUP_ID: ${GROUP_ID:-1000}
         USER_ID: ${USER_ID:-1000}
       context: ./yellow-admin/
-      dockerfile: Dockerfile_full
+      dockerfile: Dockerfile_hollow
     depends_on:
       server:
         condition: service_healthy
@@ -16,8 +16,8 @@ services:
       restart_policy:
         condition: any
     environment:
-      HOLLOW: 'false'
-      SERVER_URL: ws://server:8084
+      HOLLOW: 'true'
+      SERVER_URL: wss://server:8085
     healthcheck:
       interval: 30s
       retries: 30
@@ -29,21 +29,23 @@ services:
     - stack-network
     ports:
     - 4000:4000
-    volumes: []
+    volumes:
+    - ./yellow-admin:/app/app
+    - ./yellow-server-common:/app/yellow-server-common
   client:
     build:
       args:
         GROUP_ID: ${GROUP_ID:-1000}
         USER_ID: ${USER_ID:-1000}
       context: ./yellow-client/
-      dockerfile: Dockerfile_full
+      dockerfile: Dockerfile_hollow
     deploy:
       restart_policy:
         condition: any
     environment:
-      CLIENT_URL: http://client:3000
+      CLIENT_URL: https://client:3000
       COMMAND: ${CLIENT_COMMAND:-./start-docker-dev.sh}
-      HOLLOW: 'false'
+      HOLLOW: 'true'
       VITE_YELLOW_CLIENT_DEBUG: 'true'
       VITE_YELLOW_CLIENT_DEFAULT_ACCOUNTS: ${VITE_YELLOW_CLIENT_DEFAULT_ACCOUNTS:-}
       VITE_YELLOW_CLIENT_PING_INTERVAL: '10000'
@@ -59,7 +61,26 @@ services:
     - stack-network
     ports:
     - 3000:3000
-    volumes: []
+    volumes:
+    - ./yellow-client:/app/app
+    - ./certs/:/app/app/certs:ro
+  common-init:
+    build:
+      args:
+        GROUP_ID: ${GROUP_ID:-1000}
+        USER_ID: ${USER_ID:-1000}
+      context: ./yellow-server-common/
+    command:
+    - sh
+    - -c
+    - cd /app/yellow-server-common; ~/.bun/bin/bun i --frozen-lockfile
+    entrypoint: []
+    environment:
+      HOLLOW: 'true'
+    networks:
+    - stack-network
+    volumes:
+    - ./yellow-server-common:/app/yellow-server-common
   mariadb:
     container_name: mariadb
     depends_on:
@@ -68,7 +89,7 @@ services:
       restart_policy:
         condition: any
     environment:
-      HOLLOW: 'false'
+      HOLLOW: 'true'
       MYSQL_ROOT_PASSWORD: password
       TMPDIR: /mariadb_tmp
     healthcheck:
@@ -94,7 +115,7 @@ services:
     container_name: mariadb-init
     entrypoint: []
     environment:
-      HOLLOW: 'false'
+      HOLLOW: 'true'
     image: alpine
     networks:
     - stack-network
@@ -106,8 +127,10 @@ services:
         GROUP_ID: ${GROUP_ID:-1000}
         USER_ID: ${USER_ID:-1000}
       context: ./yellow-server-module-messages/
-      dockerfile: Dockerfile_full
+      dockerfile: Dockerfile_hollow
     depends_on:
+      common-init:
+        condition: service_completed_successfully
       mariadb:
         condition: service_healthy
       server-init:
@@ -117,10 +140,10 @@ services:
         condition: any
     environment:
       CI: ${CI:-}
-      HOLLOW: 'false'
+      HOLLOW: 'true'
       MARIA_HOST: mariadb
       MESSAGES_HOST: messages
-      SERVER_URL: ws://server:8084
+      SERVER_URL: wss://server:8085
       VITE_YELLOW_SETTINGS_PATH: /app/settings.json
     healthcheck:
       interval: 30s
@@ -134,7 +157,10 @@ services:
     ports:
     - 25001:25001
     volumes:
-    - ./generated/yellow-server-module-messages-settings-full.stack.http.json:/app/settings.json
+    - server_logs:/var/log/yellow
+    - ./yellow-server-module-messages:/app/app
+    - ./yellow-server-common:/app/yellow-server-common
+    - ./generated/yellow-server-module-messages-settings-hollow.stack.https.json:/app/settings.json
   playwright:
     build:
       args:
@@ -147,8 +173,8 @@ services:
         condition: service_healthy
     environment:
       CI: 'true'
-      PLAYWRIGHT_CLIENT_URL: http://client:3000
-      PLAYWRIGHT_SERVER_URL: ws://server:8084
+      PLAYWRIGHT_CLIENT_URL: https://client:3000
+      PLAYWRIGHT_SERVER_URL: wss://server:8085
     network_mode: service:client
     profiles:
     - test
@@ -161,8 +187,10 @@ services:
         GROUP_ID: ${GROUP_ID:-1000}
         USER_ID: ${USER_ID:-1000}
       context: ./yellow-server/
-      dockerfile: Dockerfile_full
+      dockerfile: Dockerfile_hollow
     depends_on:
+      common-init:
+        condition: service_completed_successfully
       mariadb:
         condition: service_healthy
       server-init:
@@ -172,10 +200,10 @@ services:
         condition: any
     environment:
       CI: ${CI:-}
-      HOLLOW: 'false'
+      HOLLOW: 'true'
       MARIA_HOST: mariadb
       MESSAGES_HOST: messages
-      SERVER_URL: ws://server:8084
+      SERVER_URL: wss://server:8085
       VITE_YELLOW_SETTINGS_PATH: /app/settings.json
     healthcheck:
       interval: 10s
@@ -190,8 +218,13 @@ services:
     - 8085:8085
     - 8084:8084
     volumes:
-    - ./generated/yellow-server-settings-full.stack.http.json:/app/settings.json
+    - server_tmp:/tmp
+    - server_logs:/var/log/yellow
+    - ./yellow-server:/app/app
+    - ./yellow-server-common:/app/yellow-server-common
+    - ./generated/yellow-server-settings-hollow.stack.https.json:/app/settings.json
     - ./certs:/app/certs:ro
+    - ./certs/:/app/app/certs:ro
   server-init:
     command:
     - sh
@@ -203,7 +236,7 @@ services:
     entrypoint: []
     environment:
       GROUP_ID: ${GROUP_ID:-1000}
-      HOLLOW: 'false'
+      HOLLOW: 'true'
       USER_ID: ${USER_ID:-1000}
     image: alpine
     networks:

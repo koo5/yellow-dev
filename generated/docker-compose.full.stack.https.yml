@@ -41,6 +41,7 @@ services:
       restart_policy:
         condition: any
     environment:
+      CLIENT_URL: https://client:3000
       COMMAND: ${CLIENT_COMMAND:-./start-docker-dev.sh}
       HOLLOW: 'false'
       VITE_YELLOW_CLIENT_DEBUG: 'true'
@@ -52,15 +53,14 @@ services:
       retries: 30
       start_interval: 1s
       start_period: 140s
-      test: curl -v --fail http://localhost:3000/#health
+      test: echo $$CLIENT_URL; echo $${CLIENT_URL}; curl --insecure -v --fail $$CLIENT_URL/#health
       timeout: 20s
     networks:
     - stack-network
     ports:
     - 3000:3000
     volumes:
-    - ./certs/server.key:/app/server.key:ro
-    - ./certs/server.crt:/app/server.crt:ro
+    - ./certs/:/app/app/certs:ro
   mariadb:
     container_name: mariadb
     depends_on:
@@ -193,8 +193,7 @@ services:
     volumes:
     - ./generated/yellow-server-settings-full.stack.https.json:/app/settings.json
     - ./certs:/app/certs:ro
-    - ./certs/server.key:/app/server.key:ro
-    - ./certs/server.crt:/app/server.crt:ro
+    - ./certs/:/app/app/certs:ro
   server-init:
     command:
     - sh

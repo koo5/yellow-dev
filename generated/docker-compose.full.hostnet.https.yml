@@ -1,6 +1,3 @@
-networks:
-  stack-network:
-    driver: bridge
 services:
   admin:
     build:
@@ -17,7 +14,7 @@ services:
         condition: any
     environment:
       HOLLOW: 'false'
-      SERVER_URL: ws://server:8084
+      SERVER_URL: wss://localhost:8085
     healthcheck:
       interval: 30s
       retries: 30
@@ -25,8 +22,7 @@ services:
       start_period: 140s
       test: curl -v --fail http://localhost:4000/#health
       timeout: 20s
-    networks:
-    - stack-network
+    network_mode: host
     ports:
     - 4000:4000
     volumes: []
@@ -41,7 +37,7 @@ services:
       restart_policy:
         condition: any
     environment:
-      CLIENT_URL: http://client:3000
+      CLIENT_URL: https://localhost:3000
       COMMAND: ${CLIENT_COMMAND:-./start-docker-dev.sh}
       HOLLOW: 'false'
       VITE_YELLOW_CLIENT_DEBUG: 'true'
@@ -55,11 +51,11 @@ services:
       start_period: 140s
       test: echo $$CLIENT_URL; echo $${CLIENT_URL}; curl --insecure -v --fail $$CLIENT_URL/#health
       timeout: 20s
-    networks:
-    - stack-network
+    network_mode: host
     ports:
     - 3000:3000
-    volumes: []
+    volumes:
+    - ./certs/:/app/app/certs:ro
   mariadb:
     container_name: mariadb
     depends_on:
@@ -80,8 +76,7 @@ services:
         --force 2>&1 | grep "Access denied for user"
       timeout: 20s
     image: mariadb:10.5
-    networks:
-    - stack-network
+    network_mode: host
     restart: always
     volumes:
     - mariadb:/var/lib/mysql
@@ -96,8 +91,7 @@ services:
     environment:
       HOLLOW: 'false'
     image: alpine
-    networks:
-    - stack-network
+    network_mode: host
     volumes:
     - mariadb_tmp:/mariadb_tmp
   messages:
@@ -118,9 +112,9 @@ services:
     environment:
       CI: ${CI:-}
       HOLLOW: 'false'
-      MARIA_HOST: mariadb
-      MESSAGES_HOST: messages
-      SERVER_URL: ws://server:8084
+      MARIA_HOST: localhost
+      MESSAGES_HOST: localhost
+      SERVER_URL: wss://localhost:8085
       VITE_YELLOW_SETTINGS_PATH: /app/settings.json
     healthcheck:
       interval: 30s
@@ -129,12 +123,11 @@ services:
       start_period: 140s
       test: curl -v --fail http://localhost:25001/health
       timeout: 20s
-    networks:
-    - stack-network
+    network_mode: host
     ports:
     - 25001:25001
     volumes:
-    - ./generated/yellow-server-module-messages-settings-full.stack.http.json:/app/settings.json
+    - ./generated/yellow-server-module-messages-settings-full.hostnet.https.json:/app/settings.json
   playwright:
     build:
       args:
@@ -147,8 +140,8 @@ services:
         condition: service_healthy
     environment:
       CI: 'true'
-      PLAYWRIGHT_CLIENT_URL: http://client:3000
-      PLAYWRIGHT_SERVER_URL: ws://server:8084
+      PLAYWRIGHT_CLIENT_URL: https://localhost:3000
+      PLAYWRIGHT_SERVER_URL: wss://localhost:8085
     network_mode: service:client
     profiles:
     - test
@@ -173,9 +166,9 @@ services:
     environment:
       CI: ${CI:-}
       HOLLOW: 'false'
-      MARIA_HOST: mariadb
-      MESSAGES_HOST: messages
-      SERVER_URL: ws://server:8084
+      MARIA_HOST: localhost
+      MESSAGES_HOST: localhost
+      SERVER_URL: wss://localhost:8085
       VITE_YELLOW_SETTINGS_PATH: /app/settings.json
     healthcheck:
       interval: 10s
@@ -184,14 +177,14 @@ services:
       start_period: 140s
       test: curl -v --fail http://localhost:8084/health
       timeout: 20s
-    networks:
-    - stack-network
+    network_mode: host
     ports:
     - 8085:8085
     - 8084:8084
     volumes:
-    - ./generated/yellow-server-settings-full.stack.http.json:/app/settings.json
+    - ./generated/yellow-server-settings-full.hostnet.https.json:/app/settings.json
     - ./certs:/app/certs:ro
+    - ./certs/:/app/app/certs:ro
   server-init:
     command:
     - sh
@@ -206,8 +199,7 @@ services:
       HOLLOW: 'false'
       USER_ID: ${USER_ID:-1000}
     image: alpine
-    networks:
-    - stack-network
+    network_mode: host
     volumes:
     - server_tmp:/tmp
 volumes:
