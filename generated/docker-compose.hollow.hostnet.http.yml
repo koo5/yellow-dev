@@ -14,6 +14,7 @@ services:
         condition: any
     environment:
       HOLLOW: 'true'
+      SERVER_URL: ws://localhost:8084
     healthcheck:
       interval: 30s
       retries: 30
@@ -38,6 +39,7 @@ services:
       restart_policy:
         condition: any
     environment:
+      CLIENT_URL: http://localhost:3000
       COMMAND: ${CLIENT_COMMAND:-./start-docker-dev.sh}
       HOLLOW: 'true'
       VITE_YELLOW_CLIENT_DEBUG: 'true'
@@ -49,7 +51,7 @@ services:
       retries: 30
       start_interval: 1s
       start_period: 140s
-      test: curl -v --fail http://localhost:3000/#health
+      test: echo $$CLIENT_URL; echo $${CLIENT_URL}; curl --insecure -v --fail $$CLIENT_URL/#health
       timeout: 20s
     network_mode: host
     ports:
@@ -132,7 +134,7 @@ services:
       HOLLOW: 'true'
       MARIA_HOST: localhost
       MESSAGES_HOST: localhost
-      SERVER_URL: ${SERVER_URL:-ws://localhost:8085}
+      SERVER_URL: ws://localhost:8084
       VITE_YELLOW_SETTINGS_PATH: /app/settings.json
     healthcheck:
       interval: 30s
@@ -149,6 +151,26 @@ services:
     - ./yellow-server-module-messages:/app/app
     - ./yellow-server-common:/app/yellow-server-common
     - ./generated/yellow-server-module-messages-settings-hollow.hostnet.http.json:/app/settings.json
+  playwright:
+    build:
+      args:
+        GROUP_ID: ${GROUP_ID:-1000}
+        USER_ID: ${USER_ID:-1000}
+      context: .
+      dockerfile: ./playwright-container/Dockerfile
+    depends_on:
+      client:
+        condition: service_healthy
+    environment:
+      CI: 'true'
+      PLAYWRIGHT_CLIENT_URL: http://localhost:3000
+      PLAYWRIGHT_SERVER_URL: ws://localhost:8084
+    network_mode: service:client
+    profiles:
+    - test
+    volumes:
+    - ./test-results:/app/yellow-client/test-results
+    - ./playwright-report:/app/yellow-client/playwright-report
   server:
     build:
       args:
@@ -171,7 +193,7 @@ services:
       HOLLOW: 'true'
       MARIA_HOST: localhost
       MESSAGES_HOST: localhost
-      SERVER_URL: ${SERVER_URL:-ws://localhost:8085}
+      SERVER_URL: ws://localhost:8084
       VITE_YELLOW_SETTINGS_PATH: /app/settings.json
     healthcheck:
       interval: 10s

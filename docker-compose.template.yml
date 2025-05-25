@@ -86,7 +86,6 @@ services:
       - CI=${CI:-}
       - MARIA_HOST=${MARIA_HOST:-mariadb}
       - MESSAGES_HOST=${MESSAGES_HOST:-messages}
-      - SERVER_URL=${SERVER_URL:-ws://localhost:8085}
     depends_on:
       common-init: {condition: service_completed_successfully}
       server-init: {condition: service_completed_successfully}
@@ -125,7 +124,6 @@ services:
       - CI=${CI:-}
       - MARIA_HOST=${MARIA_HOST:-mariadb}
       - MESSAGES_HOST=${MESSAGES_HOST:-messages}
-      - SERVER_URL=${SERVER_URL:-ws://localhost:8085}
     depends_on:
       common-init: {condition: service_completed_successfully}
       server-init: {condition: service_completed_successfully}
@@ -192,7 +190,7 @@ services:
       restart_policy:
         condition: any
     healthcheck:
-      test: "curl -v --fail http://localhost:3000/#health"
+      test: "echo $$CLIENT_URL; echo $${CLIENT_URL}; curl --insecure -v --fail $$CLIENT_URL/#health"
       start_interval: 1s
       start_period: 140s
       interval: 30s

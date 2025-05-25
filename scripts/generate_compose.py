@@ -41,6 +41,19 @@ def prepare_output_dir(project_root):
     os.makedirs(output_dir, exist_ok=True)
     return output_dir
 
+def get_server_url(host_network, http_mode):
+    """Generate the server URL based on network mode and HTTP/HTTPS mode."""
+    ws_protocol = 'ws' if http_mode else 'wss'
+    server_host = 'localhost' if host_network else 'server'
+    server_port = '8084' if http_mode else '8085'
+    return f'{ws_protocol}://{server_host}:{server_port}'
+
+def get_client_url(host_network, http_mode):
+    """Generate the client URL based on network mode and HTTP/HTTPS mode."""
+    http_protocol = 'http' if http_mode else 'https'
+    client_host = 'localhost' if host_network else 'client'
+    return f'{http_protocol}://{client_host}:3000'
+
 def get_instance_name(project_root, hollow_mode, host_network, http=False):
     """Generate instance name using instantiation.sh script."""
     import subprocess
@@ -207,6 +220,15 @@ def apply_host_network(compose_data, project_root, output_dir, instance_name, ht
         if service_name in ['server', 'messages']:
             service_config['environment']['MARIA_HOST'] = 'localhost'
             service_config['environment']['MESSAGES_HOST'] = 'localhost'
+            service_config['environment']['SERVER_URL'] = get_server_url(True, http_mode)
+        
+        # Set SERVER_URL for admin service
+        if service_name == 'admin':
+            service_config['environment']['SERVER_URL'] = get_server_url(True, http_mode)
+        
+        # Set CLIENT_URL for client service
+        if service_name == 'client':
+            service_config['environment']['CLIENT_URL'] = get_client_url(True, http_mode)
     
     # Update settings paths in volumes
     for service_name in ['server', 'messages']:
@@ -268,8 +290,7 @@ def apply_https_certificates(compose_data, http_mode):
             
             # Add certificate bind-mounts
             cert_volumes = [
-                './certs/server.key:/app/server.key:ro',
-                './certs/server.crt:/app/server.crt:ro'
+                './certs/:/app/app/certs:ro',
             ]
             
             for cert_volume in cert_volumes:
@@ -311,7 +332,15 @@ def apply_stack_network(compose_data, project_root, output_dir, instance_name, h
         if service_name in ['server', 'messages']:
             service_config['environment']['MARIA_HOST'] = 'mariadb'
             service_config['environment']['MESSAGES_HOST'] = 'messages'
-            service_config['environment']['SERVER_URL'] = 'ws://server:8085'
+            service_config['environment']['SERVER_URL'] = get_server_url(False, http_mode)
+        
+        # Set SERVER_URL for admin service
+        if service_name == 'admin':
+            service_config['environment']['SERVER_URL'] = get_server_url(False, http_mode)
+        
+        # Set CLIENT_URL for client service
+        if service_name == 'client':
+            service_config['environment']['CLIENT_URL'] = get_client_url(False, http_mode)
         
         # Ensure networks section exists for the service
         if 'networks' not in service_config and service_name not in ['mariadb-init', 'server-init']:
@@ -404,7 +433,11 @@ def apply_full_mode(compose_data, host_network=False, http_mode=False):
             if not service_config['depends_on']:
                 del service_config['depends_on']
     
-    # Add a Playwright container for testing in CI mode
+    return compose_data
+
+
+def add_playwright_container(compose_data, host_network=False, http_mode=False):
+    """Add a Playwright container for testing."""
     print("Adding Playwright container for testing...")
     
     # Create Playwright Dockerfile if it doesn't exist
@@ -412,14 +445,8 @@ def apply_full_mode(compose_data, host_network=False, http_mode=False):
     os.makedirs(playwright_dir, exist_ok=True)
     
     # Determine URLs based on network mode and HTTP/HTTPS
-    http_protocol = 'http' if http_mode else 'https'
-    ws_protocol = 'ws' if http_mode else 'wss'
-    client_host = 'localhost' if host_network else 'client'
-    server_host = 'localhost' if host_network else 'server'
-    server_port = '8084' if http_mode else '8085'
-
-    playwright_client_url = f'{http_protocol}://{client_host}:3000'
-    playwright_server_url = f'{ws_protocol}://{server_host}:{server_port}'
+    playwright_client_url = get_client_url(host_network, http_mode)
+    playwright_server_url = get_server_url(host_network, http_mode)
 
     # Add the Playwright service to the compose file
     compose_data['services']['playwright'] = {
@@ -447,13 +474,6 @@ def apply_full_mode(compose_data, host_network=False, http_mode=False):
         }
     }
     
-    return compose_data
-
-def remove_playwright_container(compose_data):
-    """Remove the playwright container from compose data."""
-    if 'playwright' in compose_data.get('services', {}):
-        print("Removing playwright container...")
-        del compose_data['services']['playwright']
     return compose_data
 
 
@@ -506,6 +526,8 @@ def main():
         apply_full_mode(modified_compose, host_network, http_mode)
         mode_suffix = "full"
     
+    # Add playwright container for all permutations
+    add_playwright_container(modified_compose, host_network, http_mode)
 
     # Generate the output filename
     output_filename = f"docker-compose.{instance_name}.yml"
@@ -516,20 +538,6 @@ def main():
         yaml.dump(modified_compose, f, default_flow_style=False)
     
     print(f"Generated customized docker-compose file: {output_path}")
-    
-    # For full.stack mode, also generate docker-compose.yml without playwright
-    if mode_suffix == "full" and network_suffix == "stack":
-        # Create a copy without playwright
-        no_playwright_compose = copy.deepcopy(modified_compose)
-        remove_playwright_container(no_playwright_compose)
-        
-        # Write docker-compose.yml without playwright to generated directory
-        no_playwright_filename = f"docker-compose.{instance_name}-no-playwright.yml"
-        no_playwright_path = os.path.join(output_dir, no_playwright_filename)
-        with open(no_playwright_path, 'w') as f:
-            yaml.dump(no_playwright_compose, f, default_flow_style=False)
-        
-        print(f"Generated docker-compose.yml without playwright: {no_playwright_path}")
 
     return 0
 

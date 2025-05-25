@@ -1,6 +1,3 @@
-networks:
-  stack-network:
-    driver: bridge
 services:
   admin:
     build:
@@ -8,7 +5,7 @@ services:
         GROUP_ID: ${GROUP_ID:-1000}
         USER_ID: ${USER_ID:-1000}
       context: ./yellow-admin/
-      dockerfile: Dockerfile_full
+      dockerfile: Dockerfile_hollow
     depends_on:
       server:
         condition: service_healthy
@@ -16,7 +13,8 @@ services:
       restart_policy:
         condition: any
     environment:
-      HOLLOW: 'false'
+      HOLLOW: 'true'
+      SERVER_URL: wss://localhost:8085
     healthcheck:
       interval: 30s
       retries: 30
@@ -24,24 +22,26 @@ services:
       start_period: 140s
       test: curl -v --fail http://localhost:4000/#health
       timeout: 20s
-    networks:
-    - stack-network
+    network_mode: host
     ports:
     - 4000:4000
-    volumes: []
+    volumes:
+    - ./yellow-admin:/app/app
+    - ./yellow-server-common:/app/yellow-server-common
   client:
     build:
       args:
         GROUP_ID: ${GROUP_ID:-1000}
         USER_ID: ${USER_ID:-1000}
       context: ./yellow-client/
-      dockerfile: Dockerfile_full
+      dockerfile: Dockerfile_hollow
     deploy:
       restart_policy:
         condition: any
     environment:
+      CLIENT_URL: https://localhost:3000
       COMMAND: ${CLIENT_COMMAND:-./start-docker-dev.sh}
-      HOLLOW: 'false'
+      HOLLOW: 'true'
       VITE_YELLOW_CLIENT_DEBUG: 'true'
       VITE_YELLOW_CLIENT_DEFAULT_ACCOUNTS: ${VITE_YELLOW_CLIENT_DEFAULT_ACCOUNTS:-}
       VITE_YELLOW_CLIENT_PING_INTERVAL: '10000'
@@ -51,15 +51,30 @@ services:
       retries: 30
       start_interval: 1s
       start_period: 140s
-      test: curl -v --fail http://localhost:3000/#health
+      test: echo $$CLIENT_URL; echo $${CLIENT_URL}; curl --insecure -v --fail $$CLIENT_URL/#health
       timeout: 20s
-    networks:
-    - stack-network
+    network_mode: host
     ports:
     - 3000:3000
     volumes:
-    - ./certs/server.key:/app/server.key:ro
-    - ./certs/server.crt:/app/server.crt:ro
+    - ./yellow-client:/app/app
+    - ./certs/:/app/app/certs:ro
+  common-init:
+    build:
+      args:
+        GROUP_ID: ${GROUP_ID:-1000}
+        USER_ID: ${USER_ID:-1000}
+      context: ./yellow-server-common/
+    command:
+    - sh
+    - -c
+    - cd /app/yellow-server-common; ~/.bun/bin/bun i --frozen-lockfile
+    entrypoint: []
+    environment:
+      HOLLOW: 'true'
+    network_mode: host
+    volumes:
+    - ./yellow-server-common:/app/yellow-server-common
   mariadb:
     container_name: mariadb
     depends_on:
@@ -68,7 +83,7 @@ services:
       restart_policy:
         condition: any
     environment:
-      HOLLOW: 'false'
+      HOLLOW: 'true'
       MYSQL_ROOT_PASSWORD: password
       TMPDIR: /mariadb_tmp
     healthcheck:
@@ -80,8 +95,7 @@ services:
         --force 2>&1 | grep "Access denied for user"
       timeout: 20s
     image: mariadb:10.5
-    networks:
-    - stack-network
+    network_mode: host
     restart: always
     volumes:
     - mariadb:/var/lib/mysql
@@ -94,10 +108,9 @@ services:
     container_name: mariadb-init
     entrypoint: []
     environment:
-      HOLLOW: 'false'
+      HOLLOW: 'true'
     image: alpine
-    networks:
-    - stack-network
+    network_mode: host
     volumes:
     - mariadb_tmp:/mariadb_tmp
   messages:
@@ -106,8 +119,10 @@ services:
         GROUP_ID: ${GROUP_ID:-1000}
         USER_ID: ${USER_ID:-1000}
       context: ./yellow-server-module-messages/
-      dockerfile: Dockerfile_full
+      dockerfile: Dockerfile_hollow
     depends_on:
+      common-init:
+        condition: service_completed_successfully
       mariadb:
         condition: service_healthy
       server-init:
@@ -117,10 +132,10 @@ services:
         condition: any
     environment:
       CI: ${CI:-}
-      HOLLOW: 'false'
-      MARIA_HOST: mariadb
-      MESSAGES_HOST: messages
-      SERVER_URL: ws://server:8085
+      HOLLOW: 'true'
+      MARIA_HOST: localhost
+      MESSAGES_HOST: localhost
+      SERVER_URL: wss://localhost:8085
       VITE_YELLOW_SETTINGS_PATH: /app/settings.json
     healthcheck:
       interval: 30s
@@ -129,20 +144,44 @@ services:
       start_period: 140s
       test: curl -v --fail http://localhost:25001/health
       timeout: 20s
-    networks:
-    - stack-network
+    network_mode: host
     ports:
     - 25001:25001
     volumes:
-    - ./generated/yellow-server-module-messages-settings-full.stack.https.json:/app/settings.json
+    - server_logs:/var/log/yellow
+    - ./yellow-server-module-messages:/app/app
+    - ./yellow-server-common:/app/yellow-server-common
+    - ./generated/yellow-server-module-messages-settings-hollow.hostnet.https.json:/app/settings.json
+  playwright:
+    build:
+      args:
+        GROUP_ID: ${GROUP_ID:-1000}
+        USER_ID: ${USER_ID:-1000}
+      context: .
+      dockerfile: ./playwright-container/Dockerfile
+    depends_on:
+      client:
+        condition: service_healthy
+    environment:
+      CI: 'true'
+      PLAYWRIGHT_CLIENT_URL: https://localhost:3000
+      PLAYWRIGHT_SERVER_URL: wss://localhost:8085
+    network_mode: service:client
+    profiles:
+    - test
+    volumes:
+    - ./test-results:/app/yellow-client/test-results
+    - ./playwright-report:/app/yellow-client/playwright-report
   server:
     build:
       args:
         GROUP_ID: ${GROUP_ID:-1000}
         USER_ID: ${USER_ID:-1000}
       context: ./yellow-server/
-      dockerfile: Dockerfile_full
+      dockerfile: Dockerfile_hollow
     depends_on:
+      common-init:
+        condition: service_completed_successfully
       mariadb:
         condition: service_healthy
       server-init:
@@ -152,10 +191,10 @@ services:
         condition: any
     environment:
       CI: ${CI:-}
-      HOLLOW: 'false'
-      MARIA_HOST: mariadb
-      MESSAGES_HOST: messages
-      SERVER_URL: ws://server:8085
+      HOLLOW: 'true'
+      MARIA_HOST: localhost
+      MESSAGES_HOST: localhost
+      SERVER_URL: wss://localhost:8085
       VITE_YELLOW_SETTINGS_PATH: /app/settings.json
     healthcheck:
       interval: 10s
@@ -164,16 +203,18 @@ services:
       start_period: 140s
       test: curl -v --fail http://localhost:8084/health
       timeout: 20s
-    networks:
-    - stack-network
+    network_mode: host
     ports:
     - 8085:8085
     - 8084:8084
     volumes:
-    - ./generated/yellow-server-settings-full.stack.https.json:/app/settings.json
+    - server_tmp:/tmp
+    - server_logs:/var/log/yellow
+    - ./yellow-server:/app/app
+    - ./yellow-server-common:/app/yellow-server-common
+    - ./generated/yellow-server-settings-hollow.hostnet.https.json:/app/settings.json
     - ./certs:/app/certs:ro
-    - ./certs/server.key:/app/server.key:ro
-    - ./certs/server.crt:/app/server.crt:ro
+    - ./certs/:/app/app/certs:ro
   server-init:
     command:
     - sh
@@ -185,11 +226,10 @@ services:
     entrypoint: []
     environment:
       GROUP_ID: ${GROUP_ID:-1000}
-      HOLLOW: 'false'
+      HOLLOW: 'true'
       USER_ID: ${USER_ID:-1000}
     image: alpine
-    networks:
-    - stack-network
+    network_mode: host
     volumes:
     - server_tmp:/tmp
 volumes:

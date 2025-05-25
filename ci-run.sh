@@ -49,19 +49,44 @@ fi
 
 if [ "$RUN_TESTS" = "true" ]; then
   # Start services, run tests, then shut down
-  set -x
   
+  # Time the stack startup
+  echo "[CI-RUN] Starting stack..."
+  STACK_START_TIME=$(date +%s)
+  set -x
   docker compose --project-directory . -f $COMPOSE_FILE up --build --detach --remove-orphans
+  set +x
+  STACK_END_TIME=$(date +%s)
+  STACK_DURATION=$((STACK_END_TIME - STACK_START_TIME))
+  echo "[CI-RUN] Stack startup completed in ${STACK_DURATION} seconds"
 
   # Run tests with the Playwright container
-  echo "Running tests with Playwright container..."
-  docker compose --project-directory . -f $COMPOSE_FILE run playwright
+  echo "[CI-RUN] Running tests with Playwright container..."
+  PLAYWRIGHT_START_TIME=$(date +%s)
+  set +e
+  set -x
+  docker compose --project-directory . -f $COMPOSE_FILE run --build playwright
   TEST_EXIT_CODE=$?
+  set +x
+  set -e
+  PLAYWRIGHT_END_TIME=$(date +%s)
+  PLAYWRIGHT_DURATION=$((PLAYWRIGHT_END_TIME - PLAYWRIGHT_START_TIME))
+  echo "[CI-RUN] Playwright tests completed in ${PLAYWRIGHT_DURATION} seconds"
+
+  # Print timing summary
+  TOTAL_DURATION=$((PLAYWRIGHT_END_TIME - STACK_START_TIME))
+  echo "[CI-RUN] ===== TIMING SUMMARY ====="
+  echo "[CI-RUN] Stack startup: ${STACK_DURATION}s"
+  echo "[CI-RUN] Playwright tests: ${PLAYWRIGHT_DURATION}s"
+  echo "[CI-RUN] Total time: ${TOTAL_DURATION}s"
+  echo "[CI-RUN] ========================="
 
   # Collect logs and shut down
-  echo "Collecting logs and shutting down..."
+  echo "[CI-RUN] Collecting logs and shutting down..."
+  set -x
   docker compose --project-directory . -f $COMPOSE_FILE logs > docker-compose.log
   docker compose --project-directory . -f $COMPOSE_FILE down
+  set +x
   
   # Exit with the test exit code
   exit $TEST_EXIT_CODE
@@ -70,4 +95,5 @@ else
   echo "Running services without tests..."
   set -x
   docker compose --project-directory . -f $COMPOSE_FILE up --build --remove-orphans
+  set +x
 fi

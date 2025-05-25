@@ -17,6 +17,7 @@ services:
         condition: any
     environment:
       HOLLOW: 'false'
+      SERVER_URL: ws://server:8084
     healthcheck:
       interval: 30s
       retries: 30
@@ -118,7 +119,7 @@ services:
       HOLLOW: 'false'
       MARIA_HOST: mariadb
       MESSAGES_HOST: messages
-      SERVER_URL: ws://server:8085
+      SERVER_URL: ws://server:8084
       VITE_YELLOW_SETTINGS_PATH: /app/settings.json
     healthcheck:
       interval: 30s
@@ -173,7 +174,7 @@ services:
       HOLLOW: 'false'
       MARIA_HOST: mariadb
       MESSAGES_HOST: messages
-      SERVER_URL: ws://server:8085
+      SERVER_URL: ws://server:8084
       VITE_YELLOW_SETTINGS_PATH: /app/settings.json
     healthcheck:
       interval: 10s
