@@ -178,6 +178,7 @@ services:
         GROUP_ID: "${GROUP_ID:-1000}"
     volumes:
       - ./yellow-client:/app/app
+      - ./yellow-client-common:/app/yellow-client-common
     environment:
       - VITE_YELLOW_CLIENT_PING_INTERVAL=10000
       - VITE_YELLOW_CLIENT_WALLET_PROVIDER_RECONNECT_INTERVAL=1000000

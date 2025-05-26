@@ -336,7 +336,8 @@ def apply_stack_network(compose_data, project_root, output_dir, instance_name, h
         
         # Set SERVER_URL for admin service
         if service_name == 'admin':
-            service_config['environment']['SERVER_URL'] = get_server_url(False, http_mode)
+            # for admin service, SERVER_URL is used to fill in the default server for login, so, that's always localhost
+            service_config['environment']['SERVER_URL'] = get_server_url(True, http_mode)
         
         # Set CLIENT_URL for client service
         if service_name == 'client':
