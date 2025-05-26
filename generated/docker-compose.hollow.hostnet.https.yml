@@ -58,6 +58,7 @@ services:
     - 3000:3000
     volumes:
     - ./yellow-client:/app/app
+    - ./yellow-client-common:/app/yellow-client-common
     - ./certs/:/app/app/certs:ro
   common-init:
     build:
