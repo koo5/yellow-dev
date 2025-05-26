@@ -17,4 +17,4 @@ RUN cd /app/yellow-client && ~/.bun/bin/bun i --frozen-lockfile
 
 
 
-CMD ["sh", "-c", "export REPORTERS=\"list\"; if [ \"$CI\" = \"true\" ]; then export REPORTERS=\"list,github\"; fi; cd /app/yellow-client && npx --config=playwright.config.ts --prefix /app/yellow-client playwright test /app/yellow-client/src/modules/org.libersoft.messages/tests/e2e/everything.test.ts --timeout 100000 --reporter=$REPORTERS"]
+CMD ["sh", "-c", "echo 'playwright starting...'; export REPORTERS=\"list\"; if [ \"$CI\" = \"true\" ]; then export REPORTERS=\"list,github\"; fi; cd /app/yellow-client && npx --config=playwright.config.ts --prefix /app/yellow-client playwright test /app/yellow-client/src/modules/org.libersoft.messages/tests/e2e/everything.test.ts --timeout 100000 --reporter=$REPORTERS"]
