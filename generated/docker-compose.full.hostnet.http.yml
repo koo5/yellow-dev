@@ -49,7 +49,7 @@ services:
       retries: 30
       start_interval: 1s
       start_period: 140s
-      test: echo $$CLIENT_URL; echo $${CLIENT_URL}; curl --insecure -v --fail $$CLIENT_URL/#health
+      test: curl -S -L --max-time 10 --insecure -v --fail http://localhost:3000/#health
       timeout: 20s
     network_mode: host
     ports:
@@ -182,7 +182,6 @@ services:
     - 8084:8084
     volumes:
     - ./generated/yellow-server-settings-full.hostnet.http.json:/app/settings.json
-    - ./certs:/app/certs:ro
   server-init:
     command:
     - sh

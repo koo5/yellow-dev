@@ -437,6 +437,23 @@ def apply_full_mode(compose_data, host_network=False, http_mode=False):
     return compose_data
 
 
+def update_client_healthcheck(compose_data, host_network=False, http_mode=False):
+    """Update the client service healthcheck test to use the CLIENT_URL."""
+    print("Updating client healthcheck...")
+    
+    if 'client' in compose_data.get('services', {}):
+        client_url = get_client_url(host_network, http_mode)
+        
+        # Update the healthcheck test command
+        if 'healthcheck' not in compose_data['services']['client']:
+            compose_data['services']['client']['healthcheck'] = {}
+        
+        compose_data['services']['client']['healthcheck']['test'] = f"curl -S -L --max-time 10 --insecure -v --fail {client_url}/#health"
+        print(f"Set client healthcheck test to: curl --insecure -v --fail {client_url}/#health")
+    
+    return compose_data
+
+
 def add_playwright_container(compose_data, host_network=False, http_mode=False):
     """Add a Playwright container for testing."""
     print("Adding Playwright container for testing...")
@@ -518,6 +535,9 @@ def main():
     
     # Apply HTTPS certificates if enabled
     apply_https_certificates(modified_compose, http_mode)
+    
+    # Update client healthcheck
+    update_client_healthcheck(modified_compose, host_network, http_mode)
     
     # Apply hollow/full mode
     if hollow_mode:
