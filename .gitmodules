@@ -16,3 +16,6 @@
 [submodule "yellow-client-native"]
 	path = yellow-client-native
 	url = https://github.com/libersoft-org/yellow-client-native/
+[submodule "yellow-client-common"]
+	path = yellow-client-common
+	url = https://github.com/koo5/yellow-client-common

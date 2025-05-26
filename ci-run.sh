@@ -54,7 +54,7 @@ if [ "$RUN_TESTS" = "true" ]; then
   echo "[CI-RUN] Starting stack..."
   STACK_START_TIME=$(date +%s)
   set -x
-  docker compose --project-directory . -f $COMPOSE_FILE up --build --detach --remove-orphans
+  docker compose --project-directory . -f $COMPOSE_FILE up --build --remove-orphans --detach
   set +x
   STACK_END_TIME=$(date +%s)
   STACK_DURATION=$((STACK_END_TIME - STACK_START_TIME))
