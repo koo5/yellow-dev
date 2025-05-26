@@ -17,7 +17,7 @@ services:
         condition: any
     environment:
       HOLLOW: 'false'
-      SERVER_URL: ws://server:8084
+      SERVER_URL: ws://localhost:8084
     healthcheck:
       interval: 30s
       retries: 30
