@@ -9,7 +9,7 @@ env | grep PLAYWRIGHT || true
 
 # Wait for client service to be ready
 echo "Waiting for client to be ready..."
-until curl -s http://client:3000/#health > /dev/null 2>&1; do
+until curl --insecure -L -s $PLAYWRIGHT_CLIENT_URL/#health > /dev/null 2>&1; do
   echo "Waiting for client..."
   sleep 2
 done
@@ -20,9 +20,9 @@ cd /app/yellow-client
 
 # Run playwright tests with appropriate reporter
 if [ "$CI" = "true" ]; then
-  REPORTERS="--reporter=github"
+  REPORTERS="--reporter=github,list,html"
 else
-  REPORTERS=""
+  REPORTERS="--reporter=list,html"
 fi
 
 echo "Running Playwright tests..."
