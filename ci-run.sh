@@ -65,7 +65,8 @@ if [ "$RUN_TESTS" = "true" ]; then
   PLAYWRIGHT_START_TIME=$(date +%s)
   set +e
   set -x
-  docker compose --project-directory . -f $COMPOSE_FILE run --build playwright
+  docker compose --project-directory . -f $COMPOSE_FILE run --build playwright /app/run-tests.sh
+
   TEST_EXIT_CODE=$?
   set +x
   set -e
