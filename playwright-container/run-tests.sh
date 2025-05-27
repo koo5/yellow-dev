@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "Playwright starting..."
+echo "Playwright run-tests starting..."
 
 # Show environment variables for debugging
 echo "Environment:"
