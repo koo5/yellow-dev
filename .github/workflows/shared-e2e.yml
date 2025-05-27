@@ -78,6 +78,8 @@ jobs:
       with:
         name: playwright-results-${{ github.run_id }}
         path: |
+          test-results/
+          playwright-report/
           yellow-dev/test-results/
           yellow-dev/playwright-report/
         retention-days: 30
