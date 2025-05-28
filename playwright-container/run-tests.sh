@@ -1,7 +1,14 @@
 #!/bin/bash
 set -e
 
-echo "Playwright run-tests starting..."
+echo "==============================================="
+echo "PLAYWRIGHT RUN-TESTS SCRIPT STARTED"
+echo "==============================================="
+echo "Script: /app/run-tests.sh"
+echo "Time: $(date)"
+echo "User: $(whoami)"
+echo "Working directory: $(pwd)"
+echo "==============================================="
 
 # Show environment variables for debugging
 echo "Environment:"
