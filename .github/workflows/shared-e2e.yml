@@ -17,7 +17,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-noble
+    runs-on: ubuntu-latest
     
     steps:
     - name: Print working directory
