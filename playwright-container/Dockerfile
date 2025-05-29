@@ -5,16 +5,23 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y curl unzip
 
 RUN curl -fsSL https://bun.sh/install | bash
-
+ENV PATH="/root/.bun/bin:$PATH"
 
 # Copy client and admin code
 COPY ./yellow-client /app/yellow-client
 COPY ./yellow-admin /app/yellow-admin
 
+# Copy test runner script
+COPY ./playwright-container/run-tests.sh /app/run-tests.sh
+RUN chmod +x /app/run-tests.sh
 
-RUN cd /app/yellow-client && ~/.bun/bin/bun i --frozen-lockfile
+# Install dependencies
+RUN cd /app/yellow-client && bun i --frozen-lockfile
 
+# Create test result directories
+RUN mkdir -p /app/yellow-client/test-results /app/yellow-client/playwright-report
 
+# Set proper permissions for test directories
+RUN chmod -R 777 /app/yellow-client/test-results /app/yellow-client/playwright-report
 
-
-CMD ["sh", "-c", "export REPORTERS=\"list,html\"; if [ \"$CI\" = \"true\" ]; then export REPORTERS=\"list,html,github\"; fi; cd /app/yellow-client && npx --config=playwright.config.ts --prefix /app/yellow-client playwright test /app/yellow-client/src/modules/org.libersoft.messages/tests/e2e/everything.test.ts --timeout 300000 --reporter=$REPORTERS"]
+CMD ["/app/run-tests.sh"]

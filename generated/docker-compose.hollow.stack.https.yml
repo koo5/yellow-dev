@@ -17,7 +17,7 @@ services:
         condition: any
     environment:
       HOLLOW: 'true'
-      SERVER_URL: wss://server:8085
+      SERVER_URL: wss://localhost:8085
     healthcheck:
       interval: 30s
       retries: 30
@@ -55,7 +55,7 @@ services:
       retries: 30
       start_interval: 1s
       start_period: 140s
-      test: echo $$CLIENT_URL; echo $${CLIENT_URL}; curl --insecure -v --fail $$CLIENT_URL/#health
+      test: curl -S -L --max-time 10 --insecure -v --fail https://client:3000/#health
       timeout: 20s
     networks:
     - stack-network
@@ -63,6 +63,7 @@ services:
     - 3000:3000
     volumes:
     - ./yellow-client:/app/app
+    - ./yellow-client-common:/app/yellow-client-common
     - ./certs/:/app/app/certs:ro
   common-init:
     build:
@@ -223,7 +224,6 @@ services:
     - ./yellow-server:/app/app
     - ./yellow-server-common:/app/yellow-server-common
     - ./generated/yellow-server-settings-hollow.stack.https.json:/app/settings.json
-    - ./certs:/app/certs:ro
     - ./certs/:/app/app/certs:ro
   server-init:
     command:
