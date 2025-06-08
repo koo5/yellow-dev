@@ -75,6 +75,7 @@ services:
         USER_ID: "${USER_ID:-1000}"
         GROUP_ID: "${GROUP_ID:-1000}"
     volumes:
+      - ./.git:/app/.git:ro
       - server_tmp:/tmp
       - server_logs:/var/log/yellow
       - ./yellow-server:/app/app
@@ -114,6 +115,7 @@ services:
         USER_ID: "${USER_ID:-1000}"
         GROUP_ID: "${GROUP_ID:-1000}"
     volumes:
+      - ./.git:/app/.git:ro
       - server_logs:/var/log/yellow
       - ./yellow-server-module-messages:/app/app
       - ./yellow-server-common:/app/yellow-server-common
@@ -150,6 +152,7 @@ services:
         USER_ID: "${USER_ID:-1000}"
         GROUP_ID: "${GROUP_ID:-1000}"
     volumes:
+      - ./.git:/app/.git:ro
       - ./yellow-admin:/app/app
       - ./yellow-server-common:/app/yellow-server-common
     depends_on: {server: {condition: service_healthy}}
@@ -176,6 +179,7 @@ services:
         USER_ID: "${USER_ID:-1000}"
         GROUP_ID: "${GROUP_ID:-1000}"
     volumes:
+      - ./.git:/app/.git:ro
       - ./yellow-client:/app/app
       - ./yellow-client-common:/app/yellow-client-common
     environment:

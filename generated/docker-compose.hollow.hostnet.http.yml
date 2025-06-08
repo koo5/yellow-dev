@@ -26,6 +26,7 @@ services:
     ports:
     - 4000:4000
     volumes:
+    - ./.git:/app/.git:ro
     - ./yellow-admin:/app/app
     - ./yellow-server-common:/app/yellow-server-common
   client:
@@ -57,6 +58,7 @@ services:
     ports:
     - 3000:3000
     volumes:
+    - ./.git:/app/.git:ro
     - ./yellow-client:/app/app
     - ./yellow-client-common:/app/yellow-client-common
   common-init:
@@ -148,6 +150,7 @@ services:
     ports:
     - 25001:25001
     volumes:
+    - ./.git:/app/.git:ro
     - server_logs:/var/log/yellow
     - ./yellow-server-module-messages:/app/app
     - ./yellow-server-common:/app/yellow-server-common
@@ -208,6 +211,7 @@ services:
     - 8085:8085
     - 8084:8084
     volumes:
+    - ./.git:/app/.git:ro
     - server_tmp:/tmp
     - server_logs:/var/log/yellow
     - ./yellow-server:/app/app

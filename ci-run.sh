@@ -3,6 +3,19 @@ set -euo pipefail
 
 # Script to run the stack in CI mode
 # Generates customized docker-compose files based on parameters
+#
+# Usage: ./ci-run.sh [HOLLOW] [HOST_NETWORK] [HTTP] [RUN_TESTS] [GENERATE] [DOWN_FIRST] [CLEAN]
+#
+# Parameters:
+#   HOLLOW (default: false)      - Use hollow build (true/false)
+#   HOST_NETWORK (default: false) - Use host networking (true/false)
+#   HTTP (default: true)         - Use HTTP instead of HTTPS (true/false)
+#   RUN_TESTS (default: true)    - Run Playwright tests (true/false)
+#   GENERATE (default: true)     - Generate compose files (true/false)
+#   DOWN_FIRST (default: false)  - Bring down existing stack first (true/false)
+#   CLEAN (default: false)       - Run clean.py before starting (true/false)
+#
+# Example: ./ci-run.sh false false true true true true true
 
 # Parse arguments
 HOLLOW=${1:-false}
@@ -10,20 +23,47 @@ HOST_NETWORK=${2:-false}
 HTTP=${3:-true}
 RUN_TESTS=${4:-true}
 GENERATE=${5:-true}
+DOWN_FIRST=${6:-false}
+CLEAN=${7:-false}
+
+# Set environment variables and determine compose file name
+export HOLLOW
+export HOST_NETWORK
+export HTTP
+INSTANTIATION=`./instantiation.sh`
+COMPOSE_FILE="generated/docker-compose.${INSTANTIATION}.yml"
+
+# Bring down existing stack if requested
+if [ "$DOWN_FIRST" = "true" ]; then
+  echo "Bringing down existing stack..."
+  
+  if [ -f "last.yaml" ]; then
+    echo "Found last.yaml, using it to bring down the previous stack"
+    set +e
+    docker compose --project-directory . -f last.yaml down
+    set -e
+  else
+    echo "No last.yaml found, trying to determine compose file from current parameters"
+    if [ -f "$COMPOSE_FILE" ]; then
+      echo "Using compose file: $COMPOSE_FILE"
+      set +e
+      docker compose --project-directory . -f $COMPOSE_FILE down
+      set -e
+    fi
+  fi
+fi
+
+# Clean up if requested
+if [ "$CLEAN" = "true" ]; then
+  echo "Running clean.py..."
+  ./clean.py
+fi
 
 if [ "$GENERATE" = "true" ]; then
   # Generate the customized docker-compose file with Dockerfiles
   echo "Generating Dockerfiles and compose file..."
   scripts/generate_compose.py --hollow=$HOLLOW --host-network=$HOST_NETWORK --http=$HTTP
 fi
-
-
-export HOLLOW
-export HOST_NETWORK
-export HTTP
-INSTANTIATION=`./instantiation.sh`
-# The generated compose file
-COMPOSE_FILE="generated/docker-compose.${INSTANTIATION}.yml"
 echo "Using compose file: $COMPOSE_FILE"
 
 # Set environment variables
@@ -47,9 +87,16 @@ else
   echo "Running with HTTPS disabled"
 fi
 
+
+
+# Copy current compose file to last.yaml for future reference
+echo "Copying $COMPOSE_FILE to last.yaml..."
+cp "$COMPOSE_FILE" last.yaml
+
+
 if [ "$RUN_TESTS" = "true" ]; then
   # Start services, run tests, then shut down
-  
+
   # Time the stack startup
   echo "[CI-RUN] Starting stack..."
   STACK_START_TIME=$(date +%s)
@@ -97,6 +144,7 @@ if [ "$RUN_TESTS" = "true" ]; then
   exit $TEST_EXIT_CODE
 else
   # Just run everything and keep it running
+
   echo "Running services without tests..."
   set -x
   docker compose --project-directory . -f $COMPOSE_FILE up --build --remove-orphans
