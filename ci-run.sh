@@ -101,7 +101,7 @@ if [ "$RUN_TESTS" = "true" ]; then
   echo "[CI-RUN] Starting stack..."
   STACK_START_TIME=$(date +%s)
   set -x
-  docker compose --project-directory . -f $COMPOSE_FILE up --build --remove-orphans --force-recreate --detach
+  docker compose --project-directory . -f $COMPOSE_FILE --parallel 1 up --build --remove-orphans --force-recreate --detach
   set +x
   STACK_END_TIME=$(date +%s)
   STACK_DURATION=$((STACK_END_TIME - STACK_START_TIME))
@@ -112,7 +112,7 @@ if [ "$RUN_TESTS" = "true" ]; then
   PLAYWRIGHT_START_TIME=$(date +%s)
   set +e
   set -x
-  docker compose --project-directory . -f $COMPOSE_FILE run --build playwright
+  docker compose --project-directory . -f $COMPOSE_FILE --parallel 1 run --build playwright
 
   TEST_EXIT_CODE=$?
 
