@@ -107,6 +107,9 @@ jobs:
         ls -l
         # Run CI script with full mode and stack network
         ./ci-run.sh
+      env:
+        RUN_CLIENT_TESTS: ${{ inputs.run_client_tests }}
+        RUN_ADMIN_TESTS: ${{ inputs.run_admin_tests }}
 
     - name: Upload Playwright Test Results
       uses: actions/upload-artifact@v4
@@ -118,6 +121,10 @@ jobs:
           playwright-report/
           yellow-dev/test-results/
           yellow-dev/playwright-report/
+          yellow-dev/yellow-client/test-results/
+          yellow-dev/yellow-client/playwright-report/
+          yellow-dev/yellow-admin/test-results/
+          yellow-dev/yellow-admin/playwright-report/
         retention-days: 30
 
     - name: Upload Docker Logs
