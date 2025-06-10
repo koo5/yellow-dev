@@ -14,6 +14,26 @@ on:
         required: false
         type: string
         default: ''
+      admin_repo:
+        description: 'The source repository for the yellow-admin code'
+        required: false
+        type: string
+        default: ''
+      admin_ref:
+        description: 'The ref (branch, tag, commit) to checkout for the admin code'
+        required: false
+        type: string
+        default: ''
+      run_client_tests:
+        description: 'Whether to run yellow-client tests'
+        required: false
+        type: boolean
+        default: true
+      run_admin_tests:
+        description: 'Whether to run yellow-admin tests'
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   test:
@@ -33,6 +53,15 @@ jobs:
         ref: ${{ inputs.client_ref }}
         path: source-client
     
+    # Conditionally checkout the admin repo if specified
+    - name: Checkout custom admin code
+      if: inputs.admin_repo != ''
+      uses: actions/checkout@v3
+      with:
+        repository: ${{ inputs.admin_repo }}
+        ref: ${{ inputs.admin_ref }}
+        path: source-admin
+    
     - name: Checkout yellow-dev
       uses: actions/checkout@v3
       with:
@@ -48,6 +77,13 @@ jobs:
       run: |
         rm -rf yellow-dev/yellow-client && echo "Removed old yellow-client code"
         cp -r source-client yellow-dev/yellow-client && echo "Replaced yellow-client code with custom source"
+    
+    # Replace yellow-admin code if a custom admin was checked out
+    - name: Replace yellow-admin code with custom source
+      if: inputs.admin_repo != ''
+      run: |
+        rm -rf yellow-dev/yellow-admin && echo "Removed old yellow-admin code"
+        cp -r source-admin yellow-dev/yellow-admin && echo "Replaced yellow-admin code with custom source"
 
     # Install Docker Compose v2
     - name: Install Docker Compose
