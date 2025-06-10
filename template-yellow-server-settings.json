@@ -55,7 +55,7 @@
    ]
   },
   "database": {
-   "enabled": false,
+   "enabled": true,
    "level": "debug"
   },
   "json": {

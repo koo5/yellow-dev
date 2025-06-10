@@ -17,11 +17,14 @@ RUN chmod +x /app/run-tests.sh
 
 # Install dependencies
 RUN cd /app/yellow-client && bun i --frozen-lockfile
+RUN cd /app/yellow-admin && bun i --frozen-lockfile
 
 # Create test result directories
 RUN mkdir -p /app/yellow-client/test-results /app/yellow-client/playwright-report
+RUN mkdir -p /app/yellow-admin/test-results /app/yellow-admin/playwright-report
 
 # Set proper permissions for test directories
 RUN chmod -R 777 /app/yellow-client/test-results /app/yellow-client/playwright-report
+RUN chmod -R 777 /app/yellow-admin/test-results /app/yellow-admin/playwright-report
 
 CMD ["/app/run-tests.sh"]

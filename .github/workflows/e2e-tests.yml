@@ -9,4 +9,6 @@ on:
 jobs:
   e2e-tests:
     uses: ./.github/workflows/shared-e2e.yml
-    # No inputs are needed as we're testing yellow-dev itself
+    with:
+      run_client_tests: true
+      run_admin_tests: true

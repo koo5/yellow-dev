@@ -14,32 +14,82 @@ echo "==============================================="
 echo "Environment:"
 env | grep PLAYWRIGHT || true
 
-# Wait for client service to be ready
-echo "Waiting for client to be ready..."
-until curl --insecure -L -s $PLAYWRIGHT_CLIENT_URL/#health > /dev/null 2>&1; do
-  echo "Waiting for client..."
-  sleep 2
-done
-echo "Client is ready!"
+# Test configuration
+RUN_CLIENT_TESTS=${RUN_CLIENT_TESTS:-true}
+RUN_ADMIN_TESTS=${RUN_ADMIN_TESTS:-false}
 
-# Change to client directory
-cd /app/yellow-client
+echo "Test configuration:"
+echo "RUN_CLIENT_TESTS: $RUN_CLIENT_TESTS"
+echo "RUN_ADMIN_TESTS: $RUN_ADMIN_TESTS"
 
-# Run playwright tests with appropriate reporter
+# Set up reporters
 if [ "$CI" = "true" ]; then
   REPORTERS="--reporter=github,list,html"
 else
   REPORTERS="--reporter=list,html"
 fi
 
-echo "Running Playwright tests..."
-npx playwright test \
-  --timeout 600000 \
-  src/modules/org.libersoft.messages/tests/e2e/everything.test.ts \
-  $REPORTERS
+# Initialize exit code
+TEST_EXIT_CODE=0
 
-# Capture exit code
-TEST_EXIT_CODE=$?
+# Run client tests if enabled
+if [ "$RUN_CLIENT_TESTS" = "true" ]; then
+  echo "==============================================="
+  echo "RUNNING CLIENT TESTS"
+  echo "==============================================="
+  
+  # Wait for client service to be ready
+  echo "Waiting for client to be ready..."
+  until curl --insecure -L -s $PLAYWRIGHT_CLIENT_URL/#health > /dev/null 2>&1; do
+    echo "Waiting for client..."
+    sleep 2
+  done
+  echo "Client is ready!"
+
+  # Change to client directory and run tests
+  cd /app/yellow-client
+  echo "Running client Playwright tests..."
+  npx playwright test \
+    --timeout 600000 \
+    $REPORTERS
+  
+  CLIENT_EXIT_CODE=$?
+  if [ $CLIENT_EXIT_CODE -ne 0 ]; then
+    TEST_EXIT_CODE=$CLIENT_EXIT_CODE
+    echo "Client tests failed with exit code: $CLIENT_EXIT_CODE"
+  else
+    echo "Client tests passed!"
+  fi
+fi
+
+# Run admin tests if enabled
+if [ "$RUN_ADMIN_TESTS" = "true" ]; then
+  echo "==============================================="
+  echo "RUNNING ADMIN TESTS"
+  echo "==============================================="
+  
+  # Wait for admin service to be ready
+  ADMIN_URL=${PLAYWRIGHT_ADMIN_URL:-http://admin:4000}
+  echo "Waiting for admin to be ready at $ADMIN_URL..."
+  until curl --insecure -L -s $ADMIN_URL/health > /dev/null 2>&1; do
+    echo "Waiting for admin..."
+    sleep 2
+  done
+  echo "Admin is ready!"
+
+  # Change to admin directory and run tests
+  cd /app/yellow-admin
+  echo "Running admin Playwright tests..."
+  npx playwright test $REPORTERS
+  
+  ADMIN_EXIT_CODE=$?
+  if [ $ADMIN_EXIT_CODE -ne 0 ]; then
+    TEST_EXIT_CODE=$ADMIN_EXIT_CODE
+    echo "Admin tests failed with exit code: $ADMIN_EXIT_CODE"
+  else
+    echo "Admin tests passed!"
+  fi
+fi
 
 echo "Test exit code: $TEST_EXIT_CODE"
 

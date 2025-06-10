@@ -54,6 +54,12 @@ def get_client_url(host_network, http_mode):
     client_host = 'localhost' if host_network else 'client'
     return f'{http_protocol}://{client_host}:3000'
 
+def get_admin_url(host_network, http_mode):
+    """Generate the admin URL based on network mode and HTTP/HTTPS mode."""
+    http_protocol = 'http' if http_mode else 'https'
+    admin_host = 'localhost' if host_network else 'admin'
+    return f'{http_protocol}://{admin_host}:4000'
+
 def get_instance_name(project_root, hollow_mode, host_network, http=False):
     """Generate instance name using instantiation.sh script."""
     import subprocess
@@ -465,6 +471,7 @@ def add_playwright_container(compose_data, host_network=False, http_mode=False):
     # Determine URLs based on network mode and HTTP/HTTPS
     playwright_client_url = get_client_url(host_network, http_mode)
     playwright_server_url = get_server_url(host_network, http_mode)
+    playwright_admin_url = get_admin_url(host_network, http_mode)
 
     # Add the Playwright service to the compose file
     compose_data['services']['playwright'] = {
@@ -480,12 +487,17 @@ def add_playwright_container(compose_data, host_network=False, http_mode=False):
         'environment': {
             'CI': 'true',
             'PLAYWRIGHT_CLIENT_URL': playwright_client_url,
-            'PLAYWRIGHT_SERVER_URL': playwright_server_url
+            'PLAYWRIGHT_SERVER_URL': playwright_server_url,
+            'PLAYWRIGHT_ADMIN_URL': playwright_admin_url,
+            'RUN_CLIENT_TESTS': '${RUN_CLIENT_TESTS:-true}',
+            'RUN_ADMIN_TESTS': '${RUN_ADMIN_TESTS:-false}'
         },
         'network_mode': 'service:client',  # Share network with client container
         'volumes': [
             './test-results:/app/yellow-client/test-results',
-            './playwright-report:/app/yellow-client/playwright-report'
+            './playwright-report:/app/yellow-client/playwright-report',
+            './yellow-admin/test-results:/app/yellow-admin/test-results',
+            './yellow-admin/playwright-report:/app/yellow-admin/playwright-report'
         ],
         'depends_on': {
             'client': {'condition': 'service_healthy'}
