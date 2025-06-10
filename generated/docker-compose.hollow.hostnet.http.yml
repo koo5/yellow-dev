@@ -167,14 +167,19 @@ services:
         condition: service_healthy
     environment:
       CI: 'true'
+      PLAYWRIGHT_ADMIN_URL: http://localhost:4000
       PLAYWRIGHT_CLIENT_URL: http://localhost:3000
       PLAYWRIGHT_SERVER_URL: ws://localhost:8084
+      RUN_ADMIN_TESTS: ${RUN_ADMIN_TESTS:-false}
+      RUN_CLIENT_TESTS: ${RUN_CLIENT_TESTS:-true}
     network_mode: service:client
     profiles:
     - test
     volumes:
     - ./test-results:/app/yellow-client/test-results
     - ./playwright-report:/app/yellow-client/playwright-report
+    - ./yellow-admin/test-results:/app/yellow-admin/test-results
+    - ./yellow-admin/playwright-report:/app/yellow-admin/playwright-report
   server:
     build:
       args:
