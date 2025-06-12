@@ -172,6 +172,7 @@ services:
       PLAYWRIGHT_SERVER_URL: ws://localhost:8084
       RUN_ADMIN_TESTS: ${RUN_ADMIN_TESTS:-false}
       RUN_CLIENT_TESTS: ${RUN_CLIENT_TESTS:-true}
+    ipc: host
     network_mode: service:client
     profiles:
     - test

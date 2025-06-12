@@ -2,7 +2,7 @@ FROM mcr.microsoft.com/playwright:v1.52.0-noble
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y curl unzip
+RUN apt-get update && apt-get install -y curl unzip xvfb
 
 RUN curl -fsSL https://bun.sh/install | bash
 ENV PATH="/root/.bun/bin:$PATH"
