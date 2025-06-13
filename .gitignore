@@ -8,3 +8,4 @@ docker-compose.log
 last.yaml
 ppp*
 test-results
+.dev_intention
