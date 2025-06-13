@@ -490,14 +490,18 @@ def add_playwright_container(compose_data, host_network=False, http_mode=False):
             'PLAYWRIGHT_SERVER_URL': playwright_server_url,
             'PLAYWRIGHT_ADMIN_URL': playwright_admin_url,
             'RUN_CLIENT_TESTS': '${RUN_CLIENT_TESTS:-true}',
-            'RUN_ADMIN_TESTS': '${RUN_ADMIN_TESTS:-false}'
+            'RUN_ADMIN_TESTS': '${RUN_ADMIN_TESTS:-false}',
+            'RUN_STACK_TESTS': '${RUN_STACK_TESTS:-false}'
         },
         'network_mode': 'service:client',  # Share network with client container
         'volumes': [
             './test-results:/app/yellow-client/test-results',
             './playwright-report:/app/yellow-client/playwright-report',
             './yellow-admin/test-results:/app/yellow-admin/test-results',
-            './yellow-admin/playwright-report:/app/yellow-admin/playwright-report'
+            './yellow-admin/playwright-report:/app/yellow-admin/playwright-report',
+            './stack_tests:/app/stack_tests',
+            './stack_tests/test-results:/app/stack_tests/test-results',
+            './stack_tests/playwright-report:/app/stack_tests/playwright-report'
         ],
         'depends_on': {
             'client': {'condition': 'service_healthy'}

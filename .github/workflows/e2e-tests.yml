@@ -12,3 +12,4 @@ jobs:
     with:
       run_client_tests: true
       run_admin_tests: true
+      run_stack_tests: true

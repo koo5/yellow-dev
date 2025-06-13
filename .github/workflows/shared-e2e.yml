@@ -34,6 +34,11 @@ on:
         required: false
         type: boolean
         default: true
+      run_stack_tests:
+        description: 'Whether to run stack integration tests'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   test:
@@ -110,6 +115,7 @@ jobs:
       env:
         RUN_CLIENT_TESTS: ${{ inputs.run_client_tests }}
         RUN_ADMIN_TESTS: ${{ inputs.run_admin_tests }}
+        RUN_STACK_TESTS: ${{ inputs.run_stack_tests }}
 
     - name: Upload Playwright Test Results
       uses: actions/upload-artifact@v4
@@ -125,6 +131,8 @@ jobs:
           yellow-dev/yellow-client/playwright-report/
           yellow-dev/yellow-admin/test-results/
           yellow-dev/yellow-admin/playwright-report/
+          yellow-dev/stack_tests/test-results/
+          yellow-dev/stack_tests/playwright-report/
         retention-days: 30
 
     - name: Upload Docker Logs
