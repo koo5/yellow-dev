@@ -36,7 +36,7 @@ COMPOSE_FILE="generated/docker-compose.${INSTANTIATION}.yml"
 # Bring down existing stack if requested
 if [ "$DOWN_FIRST" = "true" ]; then
   echo "Bringing down existing stack..."
-  
+
   if [ -f "last.yaml" ]; then
     echo "Found last.yaml, using it to bring down the previous stack"
     set +e
@@ -67,7 +67,7 @@ fi
 echo "Using compose file: $COMPOSE_FILE"
 
 # Set environment variables
-export CI=true
+#export CI=true
 export USER_ID=$(id -u)
 export GROUP_ID=$(id -g)
 echo "Running with USER_ID=$USER_ID and GROUP_ID=$GROUP_ID"
@@ -139,7 +139,7 @@ if [ "$RUN_TESTS" = "true" ]; then
   docker compose --project-directory . -f $COMPOSE_FILE logs > docker-compose.log
   docker compose --project-directory . -f $COMPOSE_FILE down
   set +x
-  
+
   # Exit with the test exit code
   exit $TEST_EXIT_CODE
 else

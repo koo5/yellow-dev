@@ -10,9 +10,17 @@ echo "User: $(whoami)"
 echo "Working directory: $(pwd)"
 echo "==============================================="
 
+# Start Xvfb for X11 clipboard support
+echo "Starting Xvfb for X11 support..."
+export DISPLAY=:99
+Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+XVFB_PID=$!
+sleep 2
+
 # Show environment variables for debugging
 echo "Environment:"
 env | grep PLAYWRIGHT || true
+echo "DISPLAY=$DISPLAY"
 
 # Test configuration
 RUN_CLIENT_TESTS=${RUN_CLIENT_TESTS:-true}
@@ -143,6 +151,12 @@ ls -la /app/yellow-admin/playwright-report || true
 ls -la /app/stack_tests/playwright-report || true
 
 echo "Playwright finished."
+
+# Kill Xvfb
+if [ ! -z "$XVFB_PID" ]; then
+  echo "Stopping Xvfb..."
+  kill $XVFB_PID 2>/dev/null || true
+fi
 
 # Exit with the test exit code
 exit $TEST_EXIT_CODE
