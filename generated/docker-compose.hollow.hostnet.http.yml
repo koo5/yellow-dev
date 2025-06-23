@@ -172,6 +172,7 @@ services:
       PLAYWRIGHT_SERVER_URL: ws://localhost:8084
       RUN_ADMIN_TESTS: ${RUN_ADMIN_TESTS:-false}
       RUN_CLIENT_TESTS: ${RUN_CLIENT_TESTS:-true}
+      RUN_STACK_TESTS: ${RUN_STACK_TESTS:-false}
     ipc: host
     network_mode: service:client
     profiles:
@@ -181,6 +182,9 @@ services:
     - ./playwright-report:/app/yellow-client/playwright-report
     - ./yellow-admin/test-results:/app/yellow-admin/test-results
     - ./yellow-admin/playwright-report:/app/yellow-admin/playwright-report
+    - ./stack_tests:/app/stack_tests
+    - ./stack_tests/test-results:/app/stack_tests/test-results
+    - ./stack_tests/playwright-report:/app/stack_tests/playwright-report
   server:
     build:
       args:

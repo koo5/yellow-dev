@@ -575,6 +575,9 @@ def main():
     with open(output_path, 'w') as f:
         yaml.dump(modified_compose, f, default_flow_style=False)
 
+    with open(os.path.join(output_dir, 'last.yml'), 'w') as f:
+        yaml.dump(modified_compose, f, default_flow_style=False)
+
     print(f"Generated customized docker-compose file: {output_path}")
 
     return 0

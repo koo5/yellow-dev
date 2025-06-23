@@ -143,10 +143,13 @@ if [ "$RUN_TESTS" = "true" ]; then
   # Exit with the test exit code
   exit $TEST_EXIT_CODE
 else
-  # Just run everything and keep it running
 
-  echo "Running services without tests..."
-  set -x
-  docker compose --project-directory . -f $COMPOSE_FILE up --build --remove-orphans
-  set +x
+  while test -n "$LOOP"; do
+	  echo "Running services without tests..."
+	  set -x
+	  ./clean.py
+	  docker compose --project-directory . -f $COMPOSE_FILE up --build --remove-orphans
+	  set +x
+  done
+
 fi
