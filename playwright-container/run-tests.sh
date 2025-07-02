@@ -60,6 +60,8 @@ if [ "$RUN_CLIENT_TESTS" = "true" ]; then
   cd /app/yellow-client
   echo "Running client Playwright tests..."
   npx playwright test \
+    --project=chromium \
+    --project="Mobile Chrome" \
     --timeout 900000 \
     --retries 4 \
     $REPORTERS
@@ -91,7 +93,7 @@ if [ "$RUN_ADMIN_TESTS" = "true" ]; then
   # Change to admin directory and run tests
   cd /app/yellow-admin
   echo "Running admin Playwright tests..."
-  npx playwright test $REPORTERS
+  npx playwright test --project=chromium $REPORTERS
 
   ADMIN_EXIT_CODE=$?
   if [ $ADMIN_EXIT_CODE -ne 0 ]; then
