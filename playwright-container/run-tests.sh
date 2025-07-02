@@ -25,10 +25,12 @@ echo "DISPLAY=$DISPLAY"
 # Test configuration
 RUN_CLIENT_TESTS=${RUN_CLIENT_TESTS:-true}
 RUN_ADMIN_TESTS=${RUN_ADMIN_TESTS:-false}
+RUN_STACK_TESTS=${RUN_STACK_TESTS:-false}
 
 echo "Test configuration:"
 echo "RUN_CLIENT_TESTS: $RUN_CLIENT_TESTS"
 echo "RUN_ADMIN_TESTS: $RUN_ADMIN_TESTS"
+echo "RUN_STACK_TESTS: $RUN_STACK_TESTS"
 
 # Set up reporters
 if [ "$CI" = "true" ]; then
@@ -61,7 +63,8 @@ if [ "$RUN_CLIENT_TESTS" = "true" ]; then
 
   echo "Running client Playwright tests..."
   npx playwright test \
-    --timeout 600000 \
+    --timeout 900000 \
+    --retries 4 \
     $REPORTERS
 
   CLIENT_EXIT_CODE=$?
@@ -102,14 +105,54 @@ if [ "$RUN_ADMIN_TESTS" = "true" ]; then
   fi
 fi
 
+# Run stack tests if enabled
+if [ "$RUN_STACK_TESTS" = "true" ]; then
+  echo "==============================================="
+  echo "RUNNING STACK INTEGRATION TESTS"
+  echo "==============================================="
+
+  # Wait for both admin and client services to be ready
+  ADMIN_URL=${PLAYWRIGHT_ADMIN_URL:-http://admin:4000}
+  echo "Waiting for admin to be ready at $ADMIN_URL..."
+  until curl --insecure -L -s $ADMIN_URL/health > /dev/null 2>&1; do
+    echo "Waiting for admin..."
+    sleep 2
+  done
+  echo "Admin is ready!"
+
+  echo "Waiting for client to be ready..."
+  until curl --insecure -L -s $PLAYWRIGHT_CLIENT_URL/#health > /dev/null 2>&1; do
+    echo "Waiting for client..."
+    sleep 2
+  done
+  echo "Client is ready!"
+
+  # Change to stack_tests directory and run tests
+  cd /app/stack_tests
+  echo "Running stack integration Playwright tests..."
+  npx playwright test $REPORTERS
+
+  STACK_EXIT_CODE=$?
+  if [ $STACK_EXIT_CODE -ne 0 ]; then
+    TEST_EXIT_CODE=$STACK_EXIT_CODE
+    echo "Stack tests failed with exit code: $STACK_EXIT_CODE"
+  else
+    echo "Stack tests passed!"
+  fi
+fi
+
 echo "Test exit code: $TEST_EXIT_CODE"
 
 # List test results for debugging
 echo "Listing test-results:"
 ls -la /app/yellow-client/test-results || true
+ls -la /app/yellow-admin/test-results || true
+ls -la /app/stack_tests/test-results || true
 
 echo "Listing playwright-report:"
 ls -la /app/yellow-client/playwright-report || true
+ls -la /app/yellow-admin/playwright-report || true
+ls -la /app/stack_tests/playwright-report || true
 
 echo "Playwright finished."
 

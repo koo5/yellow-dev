@@ -4,7 +4,7 @@ set -euo pipefail
 # Script to run the stack in CI mode
 # Generates customized docker-compose files based on parameters
 #
-# Usage: ./ci-run.sh [HOLLOW] [HOST_NETWORK] [HTTP] [RUN_TESTS] [GENERATE] [DOWN_FIRST] [CLEAN]
+# Usage: ./ci-run.sh [HOLLOW] [HOST_NETWORK] [HTTP] [RUN_TESTS] [GENERATE] [DOWN_FIRST] [CLEAN] [LOOP]
 #
 # Parameters:
 #   HOLLOW (default: false)      - Use hollow build (true/false)
@@ -14,6 +14,7 @@ set -euo pipefail
 #   GENERATE (default: true)     - Generate compose files (true/false)
 #   DOWN_FIRST (default: false)  - Bring down existing stack first (true/false)
 #   CLEAN (default: false)       - Run clean.py before starting (true/false)
+#   LOOP (default: empty)        - Run services in a loop (any non-empty value enables)
 #
 # Example: ./ci-run.sh false false true true true true true
 
@@ -25,6 +26,7 @@ RUN_TESTS=${4:-true}
 GENERATE=${5:-true}
 DOWN_FIRST=${6:-false}
 CLEAN=${7:-false}
+LOOP=${8:-}
 
 # Set environment variables and determine compose file name
 export HOLLOW
@@ -143,10 +145,21 @@ if [ "$RUN_TESTS" = "true" ]; then
   # Exit with the test exit code
   exit $TEST_EXIT_CODE
 else
-  # Just run everything and keep it running
 
-  echo "Running services without tests..."
-  set -x
-  docker compose --project-directory . -f $COMPOSE_FILE up --build --remove-orphans
-  set +x
+  if test -z "$LOOP"; then
+	echo "Running services without tests..."
+	set -x
+	./clean.py
+	docker compose --project-directory . -f $COMPOSE_FILE up --build --remove-orphans
+	set +x
+  fi
+
+  while test -n "$LOOP"; do
+	  echo "Running services without tests..."
+	  set -x
+	  ./clean.py
+	  docker compose --project-directory . -f $COMPOSE_FILE up --build --remove-orphans
+	  set +x
+  done
+
 fi
