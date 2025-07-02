@@ -58,6 +58,9 @@ if [ "$RUN_CLIENT_TESTS" = "true" ]; then
 
   # Change to client directory and run tests
   cd /app/yellow-client
+
+
+
   echo "Running client Playwright tests..."
   npx playwright test \
     --project=chromium \
