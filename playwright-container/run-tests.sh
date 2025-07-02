@@ -45,7 +45,7 @@ if [ "$RUN_CLIENT_TESTS" = "true" ]; then
   echo "==============================================="
   echo "RUNNING CLIENT TESTS"
   echo "==============================================="
-  
+
   # Wait for client service to be ready
   echo "Waiting for client to be ready..."
   until curl --insecure -L -s $PLAYWRIGHT_CLIENT_URL/#health > /dev/null 2>&1; do
@@ -56,11 +56,14 @@ if [ "$RUN_CLIENT_TESTS" = "true" ]; then
 
   # Change to client directory and run tests
   cd /app/yellow-client
+
+
+
   echo "Running client Playwright tests..."
   npx playwright test \
     --timeout 600000 \
     $REPORTERS
-  
+
   CLIENT_EXIT_CODE=$?
   if [ $CLIENT_EXIT_CODE -ne 0 ]; then
     TEST_EXIT_CODE=$CLIENT_EXIT_CODE
@@ -75,7 +78,7 @@ if [ "$RUN_ADMIN_TESTS" = "true" ]; then
   echo "==============================================="
   echo "RUNNING ADMIN TESTS"
   echo "==============================================="
-  
+
   # Wait for admin service to be ready
   ADMIN_URL=${PLAYWRIGHT_ADMIN_URL:-http://admin:4000}
   echo "Waiting for admin to be ready at $ADMIN_URL..."
@@ -89,7 +92,7 @@ if [ "$RUN_ADMIN_TESTS" = "true" ]; then
   cd /app/yellow-admin
   echo "Running admin Playwright tests..."
   npx playwright test $REPORTERS
-  
+
   ADMIN_EXIT_CODE=$?
   if [ $ADMIN_EXIT_CODE -ne 0 ]; then
     TEST_EXIT_CODE=$ADMIN_EXIT_CODE
