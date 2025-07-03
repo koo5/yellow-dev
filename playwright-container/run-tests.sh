@@ -65,8 +65,11 @@ if [ "$RUN_CLIENT_TESTS" = "true" ]; then
   npx playwright test \
     --project=chromium \
     --project="Mobile Chrome" \
-    --timeout 900000 \
+    --global-timeout 2200000 \
+    --timeout 120000 \
     --retries 4 \
+    --workers 4 \
+
     $REPORTERS
 
   CLIENT_EXIT_CODE=$?
