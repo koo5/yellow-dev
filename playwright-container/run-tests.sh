@@ -68,7 +68,7 @@ if [ "$RUN_CLIENT_TESTS" = "true" ]; then
     --global-timeout 2200000 \
     --timeout 120000 \
     --retries 4 \
-    --workers 4 \
+    --workers 4
 
     $REPORTERS
 
