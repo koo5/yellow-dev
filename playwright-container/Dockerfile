@@ -17,7 +17,7 @@ COPY ./playwright-container/run-tests.sh /app/run-tests.sh
 RUN chmod +x /app/run-tests.sh
 
 # Install dependencies
-RUN cd /app/yellow-client && bun i --frozen-lockfile
+RUN cd /app/yellow-client && bun i --frozen-lockfile; bun run init; bun run build
 RUN cd /app/yellow-admin && bun i --frozen-lockfile
 RUN cd /app/stack_tests && bun i --frozen-lockfile
 
