@@ -46,5 +46,5 @@ for cmd, output in outputs:
 
 print()
 #print(prompt)
-toilet("Prompting LLM...")
-subprocess.run(["llm", prompt], env=ENV)
+#toilet("Prompting LLM...")
+#subprocess.run(["llm", prompt], env=ENV)

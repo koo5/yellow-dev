@@ -34,7 +34,7 @@ echo "RUN_STACK_TESTS: $RUN_STACK_TESTS"
 
 # Set up reporters
 if [ "$CI" = "true" ]; then
-  REPORTERS="--reporter=github,list,html"
+  REPORTERS="--reporter=github,list,html,blob"
 else
   REPORTERS="--reporter=list,html"
 fi
@@ -62,6 +62,9 @@ if [ "$RUN_CLIENT_TESTS" = "true" ]; then
 
 
   echo "Running client Playwright tests..."
+  if [ -n "$PLAYWRIGHT_PARAMS" ]; then
+    echo "Running with additional params: $PLAYWRIGHT_PARAMS"
+  fi
   npx playwright test \
     --project=chromium \
     --project="Mobile Chrome" \
@@ -69,6 +72,7 @@ if [ "$RUN_CLIENT_TESTS" = "true" ]; then
     --timeout 120000 \
     --retries 4 \
     --workers 4 \
+    $PLAYWRIGHT_PARAMS \
     $REPORTERS
 
   CLIENT_EXIT_CODE=$?
